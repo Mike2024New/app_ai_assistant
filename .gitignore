@@ -62,7 +62,6 @@ $RECYCLE.BIN/
 .AppleDouble
 
 # прочее
-settings.json
 installer.json
 *.exe
 *.json
