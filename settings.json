@@ -1,0 +1,27 @@
+{
+  "app_name": "app_ai_assistant",
+  "services": {
+    "srv_llm": {
+      "model": "gemma-3-4b-it-Q4_K_M.gguf",
+      "one_message_mode": false,
+      "processor_power_percentage": 80,
+      "system_prompt": "Ты мой собеседник, мой старый друг, давай поговорим обо всём, как обычные люди, без маркдаунов. Но отвечай кратко.",
+      "n_ctx": 32100,
+      "temperature": 0.5,
+      "max_tokens": 256
+    },
+    "srv_stt_vosk": {
+      "samplerate": 16000,
+      "blocksize": 1024,
+      "model": "vosk-model-small-ru-0.22"
+    },
+    "srv_tts_silero": {
+      "samplerate": 48000,
+      "blocksize": 2048,
+      "models": [
+        "v5_5_ru.pt",
+        "v3_en.pt"
+      ]
+    }
+  }
+}
