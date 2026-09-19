@@ -67,6 +67,15 @@ exe/bin.
 
 ---
 
+## Системные требования
+
+- Версия python 3.12.
+
+**Для Windows:**
+Может потребоваться пакет **Microsoft Visual C++ Redistributable**. Скачать можно
+с [официального сайта Microsoft](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170).
+
+---
 ## Лицензии
 
 - Этот проект распространяется под лицензией MIT. Подробнее в файле [LICENSE](LICENSE).
