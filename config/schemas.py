@@ -3,5 +3,5 @@ from typing import Any
 
 
 class Settings(BaseModel):
-    app_name: str = 'app_ai_assistant'
+    app_name: str = 'app'
     services: dict[str, Any]
