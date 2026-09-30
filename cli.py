@@ -15,6 +15,7 @@ build_settings = BuildParameters(
     create_resources_symlink=False,
     delete_releases_folder=True,
     no_show_process=False,
+    console=False,
 )
 
 app = get_cli_app(

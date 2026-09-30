@@ -6,6 +6,8 @@ from infrastructure_http_clients import ServerProbe
 from infrastructure_path_utils import get_root_dir_path
 from typing import Any, Literal
 
+CREATE_NO_WINDOW = 0x08000000  # флаг Windows для скрытия консоли (которая появлялась на win11)
+
 
 class Launcher:
     def __init__(self, target_dir: Path):
@@ -68,7 +70,14 @@ class Launcher:
         async with self._lock:
             self.run_services[svc_name] = port
         cmd = [svc_path, 'run-server', '--port', str(port), '--log-level', log_level]
-        process = await asyncio.to_thread(lambda: subprocess.Popen(cmd))
+        process = await asyncio.to_thread(
+            lambda: subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=CREATE_NO_WINDOW
+            )
+        )
 
         # проверка что сервер был запущен
         try:
@@ -118,7 +127,8 @@ class Launcher:
 
 
 async def main():
-    launcher = Launcher(target_dir=Path(r'C:\Users\projects\Desktop\demo'))
+    # демо, пример.
+    launcher = Launcher(target_dir=Path(r'C:\Users\projects\Desktop\demo'))  # путь к директории где лежат сервисы
     await launcher.start(
         services={
             'srv_stt_vosk': {

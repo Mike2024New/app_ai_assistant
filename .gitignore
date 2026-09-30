@@ -38,12 +38,18 @@ secrets/
 *.key
 *.pem
 
+# сервисы
+srv_llm/
+srv_stt_vosk/
+srv_tts_silero/
+
 # мои заметки и занудство
 todo.txt
 info.txt
+helper.py
 
 # промежуточные файлы
-helper*.py
+edit_settings.py
 
 # дополнительные файлы
 pids.txt

@@ -7,6 +7,10 @@ class LLMClient:
         self._check_state_server()
         self.event = asyncio.Event()
 
+    def interrupt(self):
+        """Прерывание генерации токенов моделью"""
+        self.event.set()
+
     def _check_state_server(self):
         """Проверка что сервер запущен"""
         res = requests.get(url=f'http://localhost:{self._port}/parameters/')
@@ -19,17 +23,20 @@ class LLMClient:
             try:
                 prompt = json.dumps({'prompt': prompt})
                 await ws.send(prompt)  # отправка промпта
-
+                self.event.clear()
                 while not self.event.is_set():
-                    data = await ws.recv()
-                    data = json.loads(data)
-                    # модель пометит последний токен как end например: {'token': 'null', 'type': 'end'}
-                    if data.get('type', None) == 'end':
-                        await callback(None)
-                        break
-                    # в этой точке можно обработать токены, например собрать их в приложение и отправить в tts для озвучки
-                    token = data.get('token', '')  # пример {'token': 'фрагмент', 'type': 'mid'}
-                    await callback(token)
+                    try:
+                        data = await asyncio.wait_for(ws.recv(), timeout=0.1)  # высвобождать управление наружу
+                        data = json.loads(data)
+                        # модель пометит последний токен как end например: {'token': 'null', 'type': 'end'}
+                        if data.get('type', None) == 'end':
+                            await callback(None)
+                            break
+                        # в этой точке можно обработать токены, например собрать их в приложение и отправить в tts для озвучки
+                        token = data.get('token', '')  # пример {'token': 'фрагмент', 'type': 'mid'}
+                        await callback(token)
+                    except asyncio.TimeoutError:
+                        pass
 
             except websockets.exceptions.ConnectionClosedOK:
                 self.event.set()  # соединение закрыто штатно, всё в порядке, не логировать
