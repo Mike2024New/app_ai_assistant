@@ -10,12 +10,12 @@
       "temperature": 0.5,
       "max_tokens": 256
     },
-    "srv_stt_vosk": {
+    "srv_stt": {
       "samplerate": 16000,
       "blocksize": 1024,
       "model": "vosk-model-small-ru-0.22"
     },
-    "srv_tts_silero": {
+    "srv_tts": {
       "samplerate": 48000,
       "blocksize": 2048,
       "models": [

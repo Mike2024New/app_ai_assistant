@@ -131,7 +131,7 @@ async def main():
     launcher = Launcher(target_dir=Path(r'C:\Users\projects\Desktop\demo'))  # путь к директории где лежат сервисы
     await launcher.start(
         services={
-            'srv_stt_vosk': {
+            'srv_stt': {
                 'samplerate': 16000,
                 'blocksize': 1024,
                 'model': 'vosk-model-small-ru-0.22'

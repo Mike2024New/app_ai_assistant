@@ -3,6 +3,7 @@ from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
 from datetime import datetime
+from string import ascii_lowercase
 
 """
 Реализация полезной нагрузки приложения (пайплайн).
@@ -11,8 +12,8 @@ from datetime import datetime
 
 class Pipeline:
     def __init__(self, services: dict[str, int], queue_dialog: asyncio.Queue):
-        self._stt = STTClient(port=services['srv_stt_vosk'])
-        self._tts = TTSClient(port=services['srv_tts_silero'])
+        self._stt = STTClient(port=services['srv_stt'])
+        self._tts = TTSClient(port=services['srv_tts'])
         self._llm = LLMClient(port=services['srv_llm'])
         self._event = asyncio.Event()
         self._event_new_speech = asyncio.Event()
@@ -22,13 +23,12 @@ class Pipeline:
 
     async def interrupt_observer(self):
         """Начали говорить? Сразу прервать и генерацию токенов и tts"""
-        while True:
+        while not self._event.is_set():
             await asyncio.sleep(0.01)
             if self._event_interrupt.is_set():
-
                 if self._ai_text:
-                    now = datetime.now().strftime('%d.%m.%Y %H:%M:%S.%f')
-                    self._queue_dialog.put_nowait(f' [ {now} ] ai: {self._ai_text.strip()}')
+                    now = datetime.now().strftime('%d.%m.%Y %H:%M:%S.%f')  # noqa
+                    self._queue_dialog.put_nowait(f' [ {now} ] ai: {self._ai_text.strip()}')  # noqa
                     self._ai_text = ''
 
                 self._llm.interrupt()
@@ -51,9 +51,16 @@ class Pipeline:
     async def _tts_callback(self, sentence):
         self._ai_text += sentence
 
-        # определение голоса
         def is_russian(text: str) -> bool:
-            return any('а' <= ch.lower() <= 'я' or ch.lower() == 'ё' for ch in text)
+            """Выбор спикера в зависимости от того каких слов больше"""
+            ru_chars = list('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
+            counter = {'ru': 0, 'en': 0}
+            for ch in text:
+                if ch in ru_chars:
+                    counter['ru'] += 1
+                if ch in ascii_lowercase:
+                    counter['en'] += 1
+            return counter['ru'] > counter['en'] or not counter['en']
 
         # fallback на английский, если приложение на английском языке
         speaker = 'aidar' if is_russian(sentence) else 'en_101'
@@ -64,12 +71,13 @@ class Pipeline:
         self._queue_dialog.put_nowait(f' [ {now} ] user: {text.strip()}')
         asyncio.create_task(self._llm.ask_and_sentence(prompt=text, callback=self._tts_callback))
 
+# пример запуска пайплайна (сервисы srv_llm, srv_stt, srv_tts должны быть запущены а их порты известны)
 # async def main():
 #     pipeline = Pipeline(
 #         services={
 #             'srv_llm': 8000,
-#             'srv_stt_vosk': 8001,
-#             'srv_tts_silero': 8002,
+#             'srv_stt': 8001,
+#             'srv_tts': 8002,
 #         }
 #     )
 #     await pipeline.start()

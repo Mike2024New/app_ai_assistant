@@ -21,6 +21,7 @@ class AIAssistant:
         self._padx, self._pady = 5, 5
         self._root = widgets.RootWidget(size=(500, 500), resizable=(True, True))
         self._root.form.title('ai ассистент')
+        self._pipeline: Pipeline | None = None
         thema = themes_standart.LightBeige(FONT=('calibry', 12))
         thema = get_standart_styles(thema)
         self._style_manager = StyleManager(themes=[thema])
@@ -46,15 +47,23 @@ class AIAssistant:
                                                                  foreground='tomato'))
         await launcher.start(services=settings.services, log_level='info')
         asyncio.create_task(self.dialog_observer())
-        pipeline = Pipeline(services=launcher.run_services, queue_dialog=self._queue_dialog)
-        await pipeline.start()  # запуск конвейрера (комбинации сервисов)
+
+        try:
+            self._pipeline = Pipeline(services=launcher.run_services, queue_dialog=self._queue_dialog)
+            await self._pipeline.start()  # запуск конвейрера (комбинации сервисов)
+        except Exception as err:
+            msg = f'Авария, не удалось запустить ассистента {err}'
+            self._root.form.after(0, lambda: self._display.configure(text=msg, foreground='red'))
+            await launcher.stop()
+            self._is_running = False
+            return
 
         self._root.form.after(0, lambda: self._display.configure(text='ассистент запущен', foreground='green'))
 
         while self._is_running:
             await asyncio.sleep(0.05)
 
-        await pipeline.stop()  # остановить конвейер (комбинации сервисов)
+        await self._pipeline.stop()  # остановить конвейер (комбинации сервисов)
         await launcher.stop()  # остановить сервера
         self._root.form.after(0, lambda: self._display.configure(text='', foreground='green'))
         if self._destroy:

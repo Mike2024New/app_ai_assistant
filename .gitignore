@@ -40,8 +40,8 @@ secrets/
 
 # сервисы
 srv_llm/
-srv_stt_vosk/
-srv_tts_silero/
+srv_stt/
+srv_tts/
 
 # мои заметки и занудство
 todo.txt
