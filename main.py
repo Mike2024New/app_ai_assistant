@@ -5,7 +5,7 @@ from infrastructure_tk_ui import widgets, StyleManager, get_standart_styles, the
 from tkinter import ttk
 import asyncio
 from infrastructure_path_utils import get_root_dir_path
-from config import settings
+from config import settings, settings_manager
 from moduls import Launcher
 from pipeline import Pipeline
 from edit_settings import SettingsEdit
@@ -24,9 +24,12 @@ class AIAssistant:
         self._root = widgets.RootWidget(size=(500, 500), resizable=(True, True))
         self._root.form.title('ai ассистент')
         self._pipeline: Pipeline | None = None
-        thema = themes_standart.LightBeige(FONT=('calibry', 12))
-        thema = get_standart_styles(thema)
-        self._style_manager = StyleManager(themes=[thema])
+        thema_light = themes_standart.LightBeige(FONT=('calibry', 12))
+        thema_light = get_standart_styles(thema_light)
+        thema_dark = themes_standart.DarkGray(FONT=('calibry', 12))
+        thema_dark = get_standart_styles(thema_dark)
+        themes = [thema_light] if settings.theme == 'light' else [thema_dark]
+        self._style_manager = StyleManager(themes=themes)
         self._display: ttk.Label | None = None
         self._queue_dialog: asyncio.Queue | None = None
         self._text_area_chat: widgets.TextWidget | None = None
@@ -195,6 +198,13 @@ class AIAssistant:
         one_message_mode_check_box.set(value=SettingsEdit.llm_get_one_message_mode())
         one_message_mode_check_box.form.pack(fill='x', side='left', padx=self._padx, pady=self._pady)
 
+        themes_select_combo = widgets.ComboBoxTTK(
+            parent=frame4,
+            default=settings.theme,
+            values=['dark', 'light'],
+        )
+        themes_select_combo.form.pack(expand=True, fill='y', side='right', padx=self._padx, pady=self._pady)
+
         # ----------------- кнопка обновить настройки ---------------
 
         def update_settings():
@@ -209,6 +219,8 @@ class AIAssistant:
             SettingsEdit.llm_edit_temperature(float(temperature_spinbox.get()))
             SettingsEdit.llm_edit_n_ctx(int(n_ctx_spinbox.get()))
             SettingsEdit.llm_edit_max_tokens(int(max_tokens_spinbox.get()))
+            settings.theme = themes_select_combo.get_value()
+            settings_manager.apply_new_settings(settings)
             self._tts_running = False
             modal_window.form.destroy()
 

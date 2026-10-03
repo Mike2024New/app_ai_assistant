@@ -1,8 +1,9 @@
 {
   "app_name": "app",
+  "theme": "light",
   "speakers": {
     "en": "en_101",
-    "ru": "kseniya"
+    "ru": "aidar"
   },
   "services": {
     "srv_llm": {
