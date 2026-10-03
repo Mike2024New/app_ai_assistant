@@ -234,7 +234,7 @@ class AIAssistant:
 
         btn = ttk.Button(root.form, text='скачать', command=lambda: run_callback(text_box=text_area))
         btn.pack(expand=True, fill='both')
-        root.form.mainloop()
+        self._style_manager.apply(container=root.form)
 
     @staticmethod
     async def download_assets(root, text_box):

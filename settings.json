@@ -17,7 +17,7 @@
     "srv_stt": {
       "samplerate": 16000,
       "blocksize": 1024,
-      "model": "large-v3-turbo"
+      "model": "small"
     },
     "srv_tts": {
       "samplerate": 48000,
