@@ -3,6 +3,7 @@ from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
 from datetime import datetime
+from config import settings
 from string import ascii_lowercase
 
 """
@@ -24,7 +25,7 @@ class Pipeline:
     async def interrupt_observer(self):
         """Начали говорить? Сразу прервать и генерацию токенов и tts"""
         while not self._event.is_set():
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)  # отдать поток управления внешнему циклу событий
             if self._event_interrupt.is_set():
                 if self._ai_text:
                     now = datetime.now().strftime('%d.%m.%Y %H:%M:%S.%f')  # noqa
@@ -63,7 +64,7 @@ class Pipeline:
             return counter['ru'] > counter['en'] or not counter['en']
 
         # fallback на английский, если приложение на английском языке
-        speaker = 'aidar' if is_russian(sentence) else 'en_101'
+        speaker = settings.speakers["ru"] if is_russian(sentence) else settings.speakers["en"]
         await self._tts.say(text=sentence, speaker=speaker, add=True)
 
     async def _callback(self, text):

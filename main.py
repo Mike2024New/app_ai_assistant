@@ -1,4 +1,6 @@
 import threading
+
+from infrastructure_http_clients import DownloadFileType, file_downloader
 from infrastructure_tk_ui import widgets, StyleManager, get_standart_styles, themes_standart
 from tkinter import ttk
 import asyncio
@@ -127,15 +129,48 @@ class AIAssistant:
         # ---------------- выбор модели ----------------------------
         frame3 = ttk.Frame(frame)
         frame3.pack(expand=True, fill='both')
-        ttk.Label(frame3, text='Выберите модель:').pack(side='left', anchor='w', padx=self._padx, pady=self._pady)
-        model_combo = widgets.ComboBoxTTK(
+        ttk.Label(frame3, text='Модель llm:').pack(side='left', anchor='w', padx=self._padx, pady=self._pady)
+        llm_model_combo = widgets.ComboBoxTTK(
             parent=frame3,
             default=SettingsEdit.llm_get_current_model(),
             values=SettingsEdit.llm_get_models_list(),
         )
-        model_combo.form.pack(expand=True, fill='x', side='left', padx=self._padx, pady=self._pady)
+        llm_model_combo.form.pack(expand=True, fill='both', side='left', padx=self._padx, pady=self._pady)
 
-        # ---------------- числовые опции ----------------------------
+        # ---------------- выбор модели ----------------------------
+        frame2_1 = ttk.Frame(frame)
+        frame2_1.pack(expand=True, fill='both')
+        ttk.Label(frame2_1, text='Модель stt:').pack(side='left', anchor='w', padx=self._padx, pady=self._pady)
+        stt_model_combo = widgets.ComboBoxTTK(
+            parent=frame2_1,
+            default=SettingsEdit.stt_get_current_model(),
+            values=SettingsEdit.stt_get_models_list(),
+        )
+        stt_model_combo.form.pack(expand=True, fill='both', side='left', padx=self._padx, pady=self._pady)
+
+        # ---------------- выбор модели tts ----------------------------
+
+        frame2_2 = ttk.Frame(frame)
+        frame2_2.pack(expand=True, fill='both')
+        ttk.Label(frame2_2, text='Модель tts ru:').pack(side='left', anchor='w', padx=self._padx, pady=self._pady)
+
+        tts_models = SettingsEdit.tts_get_allowed_voices_list()
+        tts_voice_model_ru_combo = widgets.ComboBoxTTK(
+            parent=frame2_2,
+            default=SettingsEdit.tts_get_current_voices()['ru'],
+            values=tts_models['ru'],
+        )
+        tts_voice_model_ru_combo.form.pack(expand=True, fill='both', side='left', padx=self._padx, pady=self._pady)
+        ttk.Label(frame2_2, text='Модель tts en:').pack(side='left', anchor='w', padx=self._padx, pady=self._pady)
+        tts_voice_model_en_combo = widgets.ComboBoxTTK(
+            parent=frame2_2,
+            default=SettingsEdit.tts_get_current_voices()['en'],
+            values=tts_models['en'],
+        )
+
+        tts_voice_model_en_combo.form.pack(expand=True, fill='both', side='left', padx=self._padx, pady=self._pady)
+
+        # ---------------- числовые опции -------------------------------
         frame3 = ttk.Frame(frame)
         frame3.pack(expand=True, fill='both')
 
@@ -165,17 +200,75 @@ class AIAssistant:
         def update_settings():
             system_prompt = text_area_system_prompt.get_text()
             SettingsEdit.llm_edit_system_prompt(prompt=system_prompt)
-            SettingsEdit.llm_edit_model(model=model_combo.get_value())
+            SettingsEdit.llm_edit_model(model=llm_model_combo.get_value())
+            SettingsEdit.stt_edit_model(model=stt_model_combo.get_value())
             SettingsEdit.llm_edit_one_message_mode(one_message_mode_check_box.get())
+            # редактирование голосов моделей
+            SettingsEdit.tts_edit_voices(voice=tts_voice_model_ru_combo.get_value(), lang='ru')
+            SettingsEdit.tts_edit_voices(voice=tts_voice_model_en_combo.get_value(), lang='en')
             SettingsEdit.llm_edit_temperature(float(temperature_spinbox.get()))
             SettingsEdit.llm_edit_n_ctx(int(n_ctx_spinbox.get()))
             SettingsEdit.llm_edit_max_tokens(int(max_tokens_spinbox.get()))
+            self._tts_running = False
             modal_window.form.destroy()
 
         btn_update_settings = ttk.Button(frame, text='Обновить настройки')
         btn_update_settings.configure(command=lambda: update_settings())
-        btn_update_settings.pack(fill='x', padx=self._padx, pady=self._pady)
+        btn_update_settings.pack(fill='x', padx=self._padx, pady=self._pady, side='left')
+        btn_addons = ttk.Button(frame, text='дополнительно', command=lambda: self.added_materials_window())
+        btn_addons.pack(fill='x', padx=self._padx, pady=self._pady, side='left')
         self._style_manager.apply(container=modal_window.form)
+
+    def added_materials_window(self):
+        root = widgets.RootWidget(modal=True, parent=self._root.form)
+        text_area = widgets.TextWidget(parent=root.form)
+        text_area.form.configure(height=10)
+        text_area.form.pack(expand=True, fill='both')
+        text_area.insert_text(text='Скачать дополнительные материалы, для сильных машин, видеокарта cuda от 8gb VRAM')
+
+        def run_callback(text_box):
+            threading.Thread(
+                target=lambda: asyncio.run(self.download_assets(root=root.form, text_box=text_box)),
+                daemon=True,
+            ).start()
+
+        btn = ttk.Button(root.form, text='скачать', command=lambda: run_callback(text_box=text_area))
+        btn.pack(expand=True, fill='both')
+        root.form.mainloop()
+
+    @staticmethod
+    async def download_assets(root, text_box):
+        downloads_list = []
+        # сбор ulr
+        root_dir = get_root_dir_path()
+        for svc_name in settings.assets:
+            for dirname in settings.assets[svc_name]:
+                for key, val in dirname.items():
+                    td = root_dir / svc_name / 'resources' / 'models'
+                    if "*" not in key:  # если есть * в названии то извлечь в корень models
+                        td = td / key
+                    downloads_list.append(
+                        DownloadFileType(
+                            url_list=val,
+                            filename=key,
+                            target_dir=td,
+                        )
+                    )
+
+        async def observer(queue_in: asyncio.Queue):
+            while True:
+                res = await queue_in.get()
+                if res is None:
+                    break
+                # обновление строки, для одиночных загрузок. Для мультизагрузки лучше таблицы rich
+                text_box.clear_text()
+                row = '\n'.join([f'{k} {v}%' for k, v in res.items()])
+                text_box.insert_text(text=row)
+
+        queue = asyncio.Queue()
+        asyncio.create_task(observer(queue_in=queue))
+        await file_downloader(download_list=downloads_list, feedback_queue=queue, timeout=60)
+        root.destroy()
 
     def _on_close(self):
         """Выход из диалога если нажали крест"""

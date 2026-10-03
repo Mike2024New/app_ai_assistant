@@ -17,17 +17,22 @@ class STTClient:
         async with websockets.connect(f'ws://127.0.0.1:{self._port}/ws') as ws:
             try:
                 async def consumer():
+                    select_engine = 'vosk'
                     while not event.is_set():
                         try:
                             data = await asyncio.wait_for(ws.recv(), timeout=0.1)
                             data = json.loads(data)  # пример: {'type': 'result', 'text': 'распознанный текст'}
-                            if data.get('type', None) == 'partial':
+
+                            if data.get('type', None) == 'metadata':
+                                select_engine = 'whisper' if 'whisper' in data.get('engines', []) else select_engine
+                            elif data.get('type', None) == 'partial':
                                 if not self._new_speech:
                                     self._new_speech = True
                                     event_interrupt.set()  # начали новую речь, прервать всех ассистентов
-                            else:
+                            elif data.get('type', None) == 'result' and data.get('engine', None) == select_engine:
                                 text = data.get('text', '')
                                 self._new_speech = False
+                                # print(text)
                                 await callback(text)
                         except asyncio.TimeoutError:
                             pass

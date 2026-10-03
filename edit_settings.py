@@ -1,3 +1,5 @@
+import json
+
 from config import settings, settings_manager
 from infrastructure_path_utils import get_root_dir_path
 
@@ -67,9 +69,48 @@ class SettingsEdit:
             settings.services['srv_llm']['model'] = model
             settings_manager.apply_new_settings(settings=settings)
 
+    @staticmethod
+    def stt_get_current_model():
+        return settings.services['srv_stt']['model']
+
+    @classmethod
+    def stt_get_models_list(cls):
+        models_dir = root_dir / 'srv_stt' / 'resources' / 'models'
+        models = [file.name for file in models_dir.iterdir()]
+        return models
+
+    @classmethod
+    def stt_edit_model(cls, model: str):
+        models = cls.stt_get_models_list()
+        if model in models:
+            settings.services['srv_stt']['model'] = model
+            settings_manager.apply_new_settings(settings=settings)
+
+    @classmethod
+    def tts_get_current_voices(cls):
+        return settings.speakers
+
+    @classmethod
+    def tts_get_allowed_voices_list(cls):
+        models_dir = root_dir / 'srv_tts' / 'resources' / 'models'
+        with open(models_dir / 'models_info.json') as f:
+            data = json.loads(f.read())
+            models = {'en': [], 'ru': []}
+            for model in data:
+                if 'ru' in model:
+                    models['ru'] = [i for i in data[model]]
+                elif 'en' in model:
+                    models['en'] = [i for i in data[model]]
+        return models
+
+    @classmethod
+    def tts_edit_voices(cls, voice: str, lang):
+        models = cls.tts_get_allowed_voices_list()
+        if voice in models[lang]:
+            settings.speakers[lang] = voice
+            settings_manager.apply_new_settings(settings=settings)
+
 
 if __name__ == '__main__':
-    SettingsEdit.llm_edit_one_message_mode(value=False)
-    SettingsEdit.llm_edit_system_prompt(prompt='Ты мой виртуальный друг. Давай общаться без маркдаунов.')
-    # SettingsEdit.llm_edit_model(model='gemma-3-4b-it-Q4_K_M.gguf')
-    # SettingsEdit.llm_edit_system_n_ctx(value=32000)
+    # print(SettingsEdit.tts_get_models_list())
+    SettingsEdit.tts_edit_voices(voice='aidar', lang='ru')
