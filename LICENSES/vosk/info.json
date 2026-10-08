@@ -1,0 +1,5 @@
+{
+  "description": "STT модель, используется для распознавания речи.",
+  "url": ["https://github.com/alphacep/vosk-api/blob/master/COPYING"],
+  "license": "Apache 2.0"
+}

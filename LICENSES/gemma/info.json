@@ -1,0 +1,8 @@
+{
+  "description": "LLM модели используются для генерации токенов через api, по аналогии с чат ботами. Мозг приложения.",
+  "url": [
+    "https://ai.google.dev/gemma/terms#1",
+    "https://ai.google.dev/gemma/prohibited_use_policy"
+  ],
+  "license": "Gemma Terms of Use"
+}

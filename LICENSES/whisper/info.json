@@ -1,0 +1,5 @@
+{
+  "description": "STT модель, используется для распознавания речи.",
+  "url": ["https://github.com/openai/whisper/blob/main/LICENSE"],
+  "license": "MIT"
+}

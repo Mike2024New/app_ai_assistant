@@ -9,9 +9,10 @@ root_dir = get_root_dir_path()
 # конфигурация сборки bin/exe
 build_settings = BuildParameters(
     name=settings.app_name,
-    one_file=True,
+    one_file=False,
     entry_point_path=root_dir / 'main.py',
     copy_from_dist_to_target_dir=root_dir,
+    icon_path=root_dir / 'icon.ico',
     create_resources_symlink=False,
     delete_releases_folder=True,
     no_show_process=False,
