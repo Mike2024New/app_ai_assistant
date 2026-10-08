@@ -208,11 +208,12 @@ exe/bin.
 - Модели Vosk, скачиваемые установщиком ['vosk-model-small-en-us-0.15', 'vosk-model-small-ru-0.22'] и использующиеся в
   сервисе, распространяются под лицензией Apache 2.0. См. [источник](https://alphacephei.com/vosk/models).
 - Модели **Silero** (.pt файлы) распространяются под лицензией CC BY-NC-SA 4.0. См. [источник](https://silero.ai/).
-- В проекте используются модели `gemma` (скачиваются установщиком), с их лицензией можно
-  ознакомиться по [адресу](https://ai.google.dev/gemma/terms)
+- В проекте используются модели `gemma` (скачиваются установщиком). Они распространяются под [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
+  Notice: `Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms`.
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) by Georgi Gerganov (MIT License) полный текст
   лицензии: [LICENSE](https://github.com/ggerganov/llama.cpp/blob/master/LICENSE)
 - [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) by Andrei Betlen (MIT License)
+- **Подробнее про лицензии см. раздел [LICENSES](LICENSES)** 
 
 ---
 
