@@ -1,9 +1,9 @@
 import asyncio
+from string import ascii_lowercase
+from config import settings, time_utils
 from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
-from config import settings, time_utils
-from string import ascii_lowercase
 
 """
 Реализация полезной нагрузки приложения (пайплайн).
