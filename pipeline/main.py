@@ -2,8 +2,7 @@ import asyncio
 from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
-from datetime import datetime
-from config import settings
+from config import settings, time_utils
 from string import ascii_lowercase
 
 """
@@ -26,12 +25,9 @@ class Pipeline:
         """Начали говорить? Сразу прервать и генерацию токенов и tts"""
         while not self._event.is_set():
             await asyncio.sleep(0.01)  # отдать поток управления внешнему циклу событий
-            if self._event_interrupt.is_set():
-                if self._ai_text:
-                    now = datetime.now().strftime('%d.%m.%Y %H:%M:%S.%f')  # noqa
-                    self._queue_dialog.put_nowait(f' [ {now} ] ai: {self._ai_text.strip()}')  # noqa
-                    self._ai_text = ''
 
+            # текст прервали, отдать то что успел сгенерить ИИ в очередь и прервать процессы генерации
+            if self._event_interrupt.is_set():
                 self._llm.interrupt()
                 await self._tts.interrupt()
                 self._event_interrupt.clear()
@@ -47,6 +43,7 @@ class Pipeline:
         )
 
     async def stop(self):
+        self._queue_dialog.put_nowait(None)  # sentinel
         self._event.set()
 
     async def _tts_callback(self, sentence):
@@ -65,26 +62,14 @@ class Pipeline:
 
         # fallback на английский, если приложение на английском языке
         speaker = settings.speakers["ru"] if is_russian(sentence) else settings.speakers["en"]
+        self._queue_dialog.put_nowait({
+            'role': 'ai', 'text': sentence.strip(), 'timestamp': time_utils.timestamp(), 'type': 'process',
+        })
         await self._tts.say(text=sentence, speaker=speaker, add=True)
 
     async def _callback(self, text):
-        now = datetime.now().strftime('%d.%m.%Y %H:%M:%S.%f')
-        self._queue_dialog.put_nowait(f' [ {now} ] user: {text.strip()}')
+        self._queue_dialog.put_nowait({
+            'role': 'user', 'text': text.strip(), 'timestamp': time_utils.timestamp(), 'type': 'process',
+        })
+        # отправить полученную от пользователя фразу в ИИ
         asyncio.create_task(self._llm.ask_and_sentence(prompt=text, callback=self._tts_callback))
-
-# пример запуска пайплайна (сервисы srv_llm, srv_stt, srv_tts должны быть запущены а их порты известны)
-# async def main():
-#     pipeline = Pipeline(
-#         services={
-#             'srv_llm': 8000,
-#             'srv_stt': 8001,
-#             'srv_tts': 8002,
-#         }
-#     )
-#     await pipeline.start()
-#     await asyncio.to_thread(lambda: input('...press enter for exit...\n'))
-#     await pipeline.stop()
-#
-#
-# if __name__ == '__main__':
-#     asyncio.run(main())
