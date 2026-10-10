@@ -49,6 +49,7 @@ async def main():
     await pipeline.start()
     asyncio.create_task(observer(queue_dialog=queue_pipeline))
     await asyncio.to_thread(lambda: input('...'))
+    await asyncio.sleep(5)
     await pipeline.stop()
     await launcher.stop()
 
