@@ -11,10 +11,10 @@ from clients import LLMClient
 
 
 class Pipeline:
-    def __init__(self, services: dict[str, int], queue_dialog: asyncio.Queue):
-        self._stt = STTClient(port=services['srv_stt'])
-        self._tts = TTSClient(port=services['srv_tts'])
-        self._llm = LLMClient(port=services['srv_llm'])
+    def __init__(self, queue_dialog: asyncio.Queue):
+        self._stt: STTClient | None = None
+        self._tts: TTSClient | None = None
+        self._llm: LLMClient | None = None
         self._event = asyncio.Event()
         self._event_new_speech = asyncio.Event()
         self._event_interrupt = asyncio.Event()
@@ -32,7 +32,10 @@ class Pipeline:
                 await self._tts.interrupt()
                 self._event_interrupt.clear()
 
-    async def start(self):
+    async def start(self, services: dict[str, int]):
+        self._stt: STTClient | None = STTClient(port=services['srv_stt'])
+        self._tts: TTSClient | None = TTSClient(port=services['srv_tts'])
+        self._llm: LLMClient | None = LLMClient(port=services['srv_llm'])
         asyncio.create_task(self.interrupt_observer())
         asyncio.create_task(
             self._stt.listen(

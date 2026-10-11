@@ -14,7 +14,5 @@ settings_manager = get_settings_manager(
     settings_model=Settings.model_validate(default_settings),  # взять модель по умолчанию
 )
 
-print(settings_manager.settings)
-
 settings = settings_manager.settings
 time_utils = TimeUtils(timestamp_fmt='%d.%m.%Y %H:%M:%S.%f')

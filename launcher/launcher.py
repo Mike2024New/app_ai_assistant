@@ -69,6 +69,7 @@ class Launcher:
         await asyncio.gather(*tasks, return_exceptions=True)  # дождаться остановки серверов
         self._pid_manager.clear()  # всё завершилось корректно, очистить pid менеджер
         self._running = False
+        self._queue_launcher.put_nowait(None)
 
     async def _run_server(
             self, svc_path: Path, svc_name: str, svc_parameters: dict[str, Any],
