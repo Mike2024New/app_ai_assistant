@@ -1,7 +1,7 @@
 from gui.root import MainWindowUi
 from gui.ai_window import AIWindow
 
-ai_window = AIWindow()
+ai_window = AIWindow()  # главное окно для диалога с ИИ
 
 main_window = MainWindowUi(
     pages={

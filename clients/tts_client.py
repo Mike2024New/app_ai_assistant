@@ -1,5 +1,7 @@
 import asyncio, requests
 
+POLL_INTERVAL = 0.006  # частота asyncio.sleep (высвобождение потока для внешнего цикла событий)
+
 
 class TTSClient:
     def __init__(self, port: int):
@@ -32,7 +34,7 @@ class TTSClient:
         :return: None
         """
         if speaker not in self.speakers:
-            raise RuntimeError(f'speaker {speaker} не существует, выберите из {self.speakers}')
+            raise ValueError(f'speaker {speaker} не существует, выберите из {self.speakers}')
         await asyncio.to_thread(
             lambda: requests.post(
                 url=f'http://localhost:{self._port}/execute/',
@@ -47,12 +49,13 @@ class TTSClient:
 
 async def main():
     tts = TTSClient(port=8002)
-    print(tts.speakers)
-    # await tts.say(text='Привет, расскажи о первых компьютерах?', speaker='xenia', add=True)
-    # await tts.say(text='Привет, ну первые компьютеры появились не в пещерах.', speaker='aidar', add=True)
-    # await asyncio.sleep(4)
-    # await tts.say(text='Хватит, душнить! Расскажи кратко.', speaker='xenia', add=False)
-    # await asyncio.sleep(2)
+    # add = True -> добавляет фразу в очередь. False сбрасывает очередь (перебивает) и начинает новую речь
+    await tts.say(text='Привет, расскажи о первых компьютерах?', speaker='xenia', add=True)
+    await tts.say(text='Привет, ну первые компьютеры появились не в пещерах.', speaker='aidar', add=True)
+    await asyncio.sleep(4)
+    await tts.say(text='Хватит, душнить! Расскажи кратко.', speaker='xenia', add=False)
+    await asyncio.sleep(4)
+    await tts.interrupt()  # в конце, нужно прервать последний диалог через interrupt если требуется
 
 
 if __name__ == '__main__':

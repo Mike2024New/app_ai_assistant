@@ -17,9 +17,11 @@ CREATE_NO_WINDOW = 0x08000000  # флаг Windows для скрытия конс
 
 
 class Launcher:
-    def __init__(self, queue_launcher: asyncio.Queue, target_dir: Path | None = None):
+    def __init__(
+            self, target_dir: Path | None = None
+    ):
         self._running = False
-        self._queue_launcher = queue_launcher
+        self.queue = asyncio.Queue()
         # если корневая директория сервисов не передана явно, то по умолчанию поиск на папку на уровень выше
         self._root_dir = target_dir if target_dir else get_root_dir_path().parent
         self.run_services: dict[str, int] = {}
@@ -30,12 +32,14 @@ class Launcher:
             self, timeout_run_server: float = 180.0,
             log_level: Literal['debug', 'info', 'warning', 'error'] = 'info',
     ):
+        if self._running:
+            return
         self._running = True
         self._pid_manager.stop()  # остановить предыдущие pid (если программа завершилась не корректно)
         tasks = []
         services = settings.services
         for svc in services:
-            svc_path = self._root_dir / svc if EXE_MODE else self._root_dir / svc
+            svc_path = self._root_dir / svc
             if not svc_path.exists():
                 continue
 
@@ -51,10 +55,12 @@ class Launcher:
             )
             tasks.append(task)
 
-        # ожидание запуска всех серверов
+        # ожидание запуска всех серверов (исключение выбрасывается осознанно - не запустился сервис - сломан весь пайплайн)
         await asyncio.gather(*tasks, return_exceptions=False)
 
     async def stop(self, timeout_stop_server: float = 180.0):
+        if not self._running:
+            return
         tasks = []
         for svc_name, port in self.run_services.items():
             task = asyncio.create_task(
@@ -66,10 +72,15 @@ class Launcher:
             )
             tasks.append(task)
 
-        await asyncio.gather(*tasks, return_exceptions=True)  # дождаться остановки серверов
+        # дождаться остановки серверов (останавливать всё что останавливается)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for srv, result in zip(self.run_services.keys(), results):
+            if isinstance(result, Exception):
+                self.queue.put_nowait(f'⚠ Не удалось остановить сервис {srv}')
+
         self._pid_manager.clear()  # всё завершилось корректно, очистить pid менеджер
         self._running = False
-        self._queue_launcher.put_nowait(None)
+        self.queue.put_nowait(None)
 
     async def _run_server(
             self, svc_path: Path, svc_name: str, svc_parameters: dict[str, Any],
@@ -78,7 +89,7 @@ class Launcher:
     ):
 
         # уведомить приложение о запуске
-        self._queue_launcher.put_nowait(
+        self.queue.put_nowait(
             {
                 'timestamp': time_utils.timestamp(),
                 'msg': f'Запуск компонента {svc_name}',
@@ -97,6 +108,7 @@ class Launcher:
             # запуск из кода (для разработки)
             interpreter_path = find_interpreter_by_root_dir(svc_path)
             if interpreter_path is None:
+                self.queue.put_nowait(f'Не найден интерпретатор сервиса `{svc_name}`')
                 raise RuntimeError(f'Не найден интерпретатор сервиса `{svc_name}`')
             cmd = [interpreter_path, 'cli.py', 'run-server', '--port', str(port), '--log-level', log_level]
 
@@ -122,30 +134,30 @@ class Launcher:
             if res.status_code != 200:
                 raise RuntimeError(f'Сервер {svc_name} не был запущен')
         except Exception as err:
-            self._queue_launcher.put_nowait({
+            self.queue.put_nowait({
                 'timestamp': None, 'msg': f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}',
                 'type': 'error',
             })
-            self._queue_launcher.put_nowait(None)
+            self.queue.put_nowait(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
             raise RuntimeError(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
 
         # получение pid сервера
         res = await asyncio.to_thread(lambda: requests.get(f'http://localhost:{port}/pid/'))
         if res.status_code != 200:
-            self._queue_launcher.put_nowait({
+            self.queue.put_nowait({
                 'timestamp': None, 'msg': f'Сервер `{svc_name}` не выдает pid',
                 'type': 'error',
             })
-            self._queue_launcher.put_nowait(None)
+            self.queue.put_nowait(f'Сервер `{svc_name}` не выдает pid')
             raise RuntimeError(f'Сервер `{svc_name}` не выдает pid')
         res = res.json()
         pid = res.get('pid', None)  # noqa
         if pid is None:
-            self._queue_launcher.put_nowait({
+            self.queue.put_nowait({
                 'timestamp': None, 'msg': f'Не получен pid для сервера {svc_name}',
                 'type': 'error',
             })
-            self._queue_launcher.put_nowait(None)
+            self.queue.put_nowait(f'Не получен pid для сервера {svc_name}')
             raise RuntimeError(f'Не получен pid для сервера {svc_name}')
         self._pid_manager.add(pid)
 
@@ -153,24 +165,36 @@ class Launcher:
         res = await asyncio.to_thread(
             lambda: requests.post(url=f'http://localhost:{port}/start/', json=svc_parameters))
         if res.status_code != 200:
-            self._queue_launcher.put_nowait({
+            self.queue.put_nowait({
                 'timestamp': time_utils.timestamp(),
                 'msg': f'Engine компонента {svc_name} не был запущен',
                 'type': 'error',
             })
-            self._queue_launcher.put_nowait(None)
+            self.queue.put_nowait(None)
             raise RuntimeError(f'Engine сервера `{svc_name}` не был запущен')
 
         # уведомить приложение о запуске
-        self._queue_launcher.put_nowait({
+        self.queue.put_nowait({
             'timestamp': time_utils.timestamp(),
             'msg': f'Компонент {svc_name} запущен. Порт {port}, pid {pid}, url {f"http://localhost:{port}/docs/"}',
             'type': 'start',
         })
         return process
 
+    async def observer(self, callback):
+        """Обсервер, наблюдает за запуском и остановкой сервисов, применяет callback"""
+        while True:
+            try:
+                res = await asyncio.wait_for(self.queue.get(), 0.5)
+                if res is None:
+                    break
+                if callback is not None:
+                    callback(res)
+            except asyncio.TimeoutError:
+                pass
+
     async def _stop_server(self, svc_name, port, timeout_stop_server: float = 180.0):
-        self._queue_launcher.put_nowait({
+        self.queue.put_nowait({
             'timestamp': time_utils.timestamp(),
             'msg': f'Остановка компонента {svc_name}.',
             'type': 'stop',
@@ -188,7 +212,7 @@ class Launcher:
         except Exception as err:
             raise RuntimeError(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
 
-        self._queue_launcher.put_nowait(
+        self.queue.put_nowait(
             {
                 'timestamp': time_utils.timestamp(),
                 'msg': f'Компонент {svc_name} остановлен.',
@@ -198,22 +222,10 @@ class Launcher:
 
 
 if __name__ == '__main__':
-    async def launcher_observer(queue_launch: asyncio.Queue):
-        """Наблюдение за лаунчером (возвращает в очередь результаты)"""
-        while True:
-            try:
-                res = await  asyncio.wait_for(queue_launch.get(), timeout=0.4)
-                if res is None:
-                    break
-                print(res)
-            except asyncio.TimeoutError:
-                pass
-
-
     async def example():
-        queue_launcher = asyncio.Queue()
-        launcher = Launcher(queue_launcher=queue_launcher)
-        asyncio.create_task(launcher_observer(queue_launch=queue_launcher))
+        launcher = Launcher()
+        # запуск наблюдателя, нужно передать callback
+        asyncio.create_task(launcher.observer(callback=lambda x: print(x)))
         await launcher.start()
         await asyncio.to_thread(lambda: input('...'))
         await launcher.stop()

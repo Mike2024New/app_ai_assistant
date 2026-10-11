@@ -1,5 +1,4 @@
 import customtkinter as ctk
-from infrastructure_path_utils import get_root_dir_path
 from typing import Callable, Literal
 import tkinter as tk
 
