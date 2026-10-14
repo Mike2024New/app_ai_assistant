@@ -45,9 +45,8 @@ srv_stt/
 srv_tts/
 
 # мои заметки и занудство
-todo.txt
 info.txt
-helper.py
+settings_editor.py
 
 
 # дополнительные файлы

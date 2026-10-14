@@ -52,6 +52,7 @@ class MainWindowUi:
             self._footer_frame_draw()
 
         # отрисовка главного окна
+        self.root.title('')
         self.root.minsize(width=min_width, height=min_height)
         self.root.resizable(width=resizable_width, height=resizable_height)
         self.root.update_idletasks()

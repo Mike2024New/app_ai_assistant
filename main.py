@@ -11,11 +11,23 @@ main_window = MainWindowUi(
         'ai_window': ai_window.window,
         'settings_window': settings_window.window,
     },
-    min_width=850, min_height=500,
+    min_width=1050, min_height=650,
     resizable_width=True, resizable_height=True,
     footer=True, header=True, header_text='AI ассистент', nav_theme_switcher=True,
     nav_pages_combobox=True, nav_pages_buttons=True,
 )
+
+# # В следующей версии нужно будет доделать. Остановку запущенных процессов при нажатии крестика
+# def root_protocol():
+#     # остановка сервисов
+#     main_window.root.after(
+#         0,
+#         lambda: threading.Thread(target=asyncio.run, args=(ai_window.stop(),), daemon=True).start()
+#     )
+#     main_window.root.destroy()
+#
+# main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
+
 main_window.root.iconbitmap('icon.ico')
 main_window.set_page('ai_window')
 main_window.start()
