@@ -6,7 +6,7 @@ import tkinter as tk
 class MainWindowUi:
     def __init__(
             self,
-            pages: dict[str, Callable[[ctk.CTk, ctk.CTkFrame, ctk.CTkLabel, dict], None]] | None = None,
+            pages: dict[str, Callable[[ctk.CTk, ctk.CTkFrame, ctk.CTkLabel, dict], None]],
             min_width: int = 0, min_height: int = 0,
             resizable_width: bool = False, resizable_height: bool = False,
             start_theme: Literal['dark', 'light'] = 'dark',
@@ -22,11 +22,14 @@ class MainWindowUi:
         # остальная логика класса
         self._storage = {}  # окна могут хранить информацию между собой через ключи storage
         self._pages = pages
+        self._page_frames: dict[str, ctk.CTkFrame] = {}
+        self._current_page: str | None = None
         self._page_index = 0
         self._page_order = list(self._pages.keys())
         self._page_combobox: ctk.CTkComboBox | None = None
         # установка темы
         ctk.set_appearance_mode(start_theme)
+        # from infrastructure_path_utils import get_root_dir_path
         # ctk.set_default_color_theme(str(get_root_dir_path() / 'themes' / 'my_theme.json'))
         self.root = ctk.CTk()
         self._body_frame: ctk.CTkFrame | None = None
@@ -76,20 +79,11 @@ class MainWindowUi:
         print(f"⚠ tkinter_error: {exc}\t{val}\t{tb}")
 
     def _body_frame_draw(self):
-        """Очищаем только внутренности, не трогая сам базовый фрейм"""
+        """Очищает только внутренности, не трогая сам базовый фрейм"""
         # Если фрейма еще нет (самый первый запуск) — создать его
         if self._body_frame is None:
             self._body_frame = ctk.CTkFrame(self.root)
             self._body_frame.pack(expand=True, fill='both', padx=10, pady=(10, 5))
-        else:
-            # Если он уже есть — просто удалить все дочерние виджеты внутри него
-            self._body_frame.update_idletasks()
-            for widget in self._body_frame.winfo_children():
-                try:
-                    widget.destroy()
-                except Exception as err:
-                    print(err)
-        # В этой точке self._body_frame абсолютно чист, стабилен и готов принимать контент страницы
 
     def set_row_state(self, text: str, text_color: str):
         if not self._footer or not self._row_state_lbl:
@@ -124,11 +118,7 @@ class MainWindowUi:
         # кнопка переключения тем
         frame_header = ctk.CTkFrame(self.root)
         frame_header.pack(expand=False, fill='x', padx=10, pady=(10, 0))
-
-        # на прямую нет возможности через темы прописать стиль для этих кнопок (где текст как кнопки)
-        # поэтому стиль выдергивается через fg_color
         elements_text_color = ctk.CTkButton(frame_header).cget('fg_color')
-
         self._header_lbl = ctk.CTkLabel(frame_header, text=header_text, text_color=elements_text_color)
         self._header_lbl.configure(font=('roboto', 18, 'bold'))
         self._header_lbl.pack(side='left', fill='x', padx=10, pady=8)
@@ -183,13 +173,27 @@ class MainWindowUi:
         self.set_page(name=self._page_order[self._page_index])
 
     def set_page(self, name: str):
-        self._page_index = self._page_order.index(name)
-        self._body_frame_draw()
-        self._footer_frame_draw()
-        self._pages[name](self.root, self._body_frame, self._row_state_lbl, self._storage)
-        current_page = self._page_order[self._page_index]
-        if self._page_combobox:
-            self._page_combobox.set(current_page)
+        """
+        Показать страницы, суть - страницы создаются один раз. И хранятся в памяти, при выборе текущей другие скрываются
+        (для небольших приложений оптимально, для больших не очень, так как всё в памяти, там лучше генерировать виджеты)
+        """
+        if name not in self._page_order:
+            return
+
+        # Скрыть текущую
+        if self._current_page is not None:
+            self._page_frames[self._current_page].pack_forget()
+
+        # Создать frame для страницы, если ещё нет
+        if name not in self._page_frames:
+            frame = ctk.CTkFrame(self._body_frame)
+            self._page_frames[name] = frame
+            # вызвать страницу ОДИН РАЗ — она сама заполнит frame своими виджетами
+            self._pages[name](self.root, frame, self._row_state_lbl, self._storage)
+
+        # Показать нужную
+        self._page_frames[name].pack(expand=True, fill='both')
+        self._current_page = name
 
     @staticmethod
     def _theme_switcher(theme_btn):
