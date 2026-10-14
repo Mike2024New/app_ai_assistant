@@ -160,4 +160,4 @@ class SettingsEditor:
 
 
 if __name__ == '__main__':
-    print(SettingsEditor.reset_settings())
+    print(SettingsEditor.llm_get_models_list())

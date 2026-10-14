@@ -1,6 +1,7 @@
 from gui.root import MainWindowUi
 from gui.ai_window import AIWindow
 from gui.settings_window import SettingsWindow
+from infrastructure_path_utils import get_root_dir_path
 
 ai_window = AIWindow()  # главное окно для диалога с ИИ
 settings_window = SettingsWindow()  # настройки
@@ -28,6 +29,7 @@ main_window = MainWindowUi(
 #
 # main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
 
-main_window.root.iconbitmap('icon.ico')
+
+main_window.root.iconbitmap(get_root_dir_path() / 'icon.ico')
 main_window.set_page('ai_window')
 main_window.start()
