@@ -1,6 +1,6 @@
-import asyncio
+import asyncio, json
 from string import ascii_lowercase
-from config import settings, time_utils
+from config import settings, time_utils, history_messages_json
 from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
@@ -28,6 +28,7 @@ class Pipeline:
         self._stt: STTClient | None = None
         self._tts: TTSClient | None = None
         self._llm: LLMClient | None = None
+        self._llm_first_message: bool = False  # проверка, что llm успел ответить хоть что-то (исключ пустых запусков)
         self._event = asyncio.Event()
         self.queue = asyncio.Queue()
         self._stt_observer_task: asyncio.Task | None = None
@@ -48,6 +49,25 @@ class Pipeline:
         self._stt: STTClient | None = STTClient(port=services['srv_stt'], event=self._event)
         self._tts: TTSClient | None = TTSClient(port=services['srv_tts'])
         self._llm: LLMClient | None = LLMClient(port=services['srv_llm'], event=self._event)
+
+        # загрузка истории сообщений (продолжение диалога с llm - примитивная долговременная память)
+        if not settings.services['srv_llm']['one_message_mode'] and history_messages_json.exists():
+            self.queue.put_nowait({
+                'role': 'user', 'text': 'загрузка истории сообщений', 'timestamp': time_utils.timestamp(),
+                'type': 'process',
+            })
+            try:
+                with open(file=history_messages_json, mode='r', encoding='utf-8') as f:
+                    data = json.loads(f.read())
+                await self._llm.set_history_messages(history_messages=data)
+            except Exception as err:
+                print(err)
+                self.queue.put_nowait({
+                    'role': 'user', 'text': 'не удалось загрузить историю сообщений',
+                    'timestamp': time_utils.timestamp(),
+                    'type': 'process',
+                })
+
         # запуск stt с callback функциями
         # действия в случае если новая речь
         self._stt_observer_task = asyncio.create_task(self._stt.observer(callback=self.observer_callback))
@@ -57,10 +77,21 @@ class Pipeline:
     async def stop(self):
         if not self._running:
             return
+
+        # загрузка истории сообщений (продолжение диалога с llm - примитивная долговременная память)
+        if not settings.services['srv_llm']['one_message_mode'] and self._llm_first_message:
+            self.queue.put_nowait({
+                'role': 'user', 'text': 'сжатие истории сообщений', 'timestamp': time_utils.timestamp(),
+                'type': 'process',
+            })
+            summary = await self._llm.get_history_messages()  # llm проводит суммаризацию
+            with open(file=history_messages_json, mode='w', encoding='utf-8') as f:
+                summary = {'history_messages': summary}
+                f.write(json.dumps(summary, ensure_ascii=False, indent=2))
+
         self.queue.put_nowait(None)  # sentinel
         self._event.set()  # прервать все дочерние процессы (stt, llm, tts)
         await self.observer_callback()  # появилась новая речь остановить llm и tts
-        # дождаться завершения всех задач
         self._running = False
 
     async def _tts_callback(self, sentence):
@@ -70,6 +101,7 @@ class Pipeline:
             'role': 'ai', 'text': sentence.strip(), 'timestamp': time_utils.timestamp(), 'type': 'process',
         })
         await self._tts.say(text=sentence, speaker=speaker, add=True)
+        self._llm_first_message = True
 
     async def _stt_callback(self, text):
         # реакция на полученную фразу

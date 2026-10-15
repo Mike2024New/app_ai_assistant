@@ -1,3 +1,5 @@
+import os
+from config import history_messages_json
 import customtkinter as ctk
 from settings_editor import SettingsEditor
 
@@ -73,13 +75,7 @@ class SettingsWindow:
         self._llm_prompt_text_area = ctk.CTkTextbox(frame_left, width=300)
         self._llm_prompt_text_area.pack(expand=True, fill='both', padx=self._padx, pady=self._pady)
 
-        self._llm_one_message_checkbox = ctk.CTkCheckBox(frame_left, text='Не сохранять историю между запросами')
-        self._llm_one_message_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
-
-        self._llm_use_mmap_checkbox = ctk.CTkCheckBox(frame_left, text='Использовать RAM (use mmap)')
-        self._llm_use_mmap_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
-
-        # =========================== RIGHT_FRAME =============================================
+        # =========================== CENTRAL_FRAME =============================================
         # n_ctx
         frame1 = ctk.CTkFrame(frame_center, fg_color='transparent', border_width=0)
         frame1.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
@@ -113,6 +109,21 @@ class SettingsWindow:
         ).pack(expand=False, side='left', fill='x')
         self._llm_processor_power_percentage = ctk.CTkEntry(frame4, width=150)
         self._llm_processor_power_percentage.pack(expand=False, fill='x', side='right')
+
+        self._llm_one_message_checkbox = ctk.CTkCheckBox(frame_center, text='Режим вопрос ответ')
+        self._llm_one_message_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
+
+        self._llm_use_mmap_checkbox = ctk.CTkCheckBox(frame_center, text='Использовать RAM (use mmap)')
+        self._llm_use_mmap_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
+
+        def clear_history():
+            if history_messages_json.exists():
+                os.remove(history_messages_json)
+                llm_clear_history_btn.configure(state='disabled')
+
+        llm_clear_history_btn = ctk.CTkButton(frame_center, text='Сбросить summary', command=lambda: clear_history())
+        llm_clear_history_btn.configure(state='normal' if history_messages_json.exists() else 'disabled')
+        llm_clear_history_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
 
         # =========================== RIGHT_FRAME =============================================
         # выбор stt модели

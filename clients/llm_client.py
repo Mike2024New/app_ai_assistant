@@ -50,6 +50,16 @@ class LLMClient:
                 print(f'Ошибка соединения {err}')
                 self._inner_event.set()
 
+    async def get_history_messages(self):
+        """Получение с сервера истории сообщений"""
+        return requests.get(url=f'http://localhost:{self._port}/history/').json()
+
+    async def set_history_messages(self, history_messages):
+        """Установить историю для llm (подмена истории сообщений, удобно для нескольких llm агентов)"""
+        res = requests.post(url=f'http://localhost:{self._port}/set_history_messages/', json=history_messages)
+        if res.status_code != 200:
+            raise RuntimeError(f'не удалось загрузить историю сообщений')
+
     async def ask_and_sentence(self, prompt: str, callback):
         sentence = ''
 
