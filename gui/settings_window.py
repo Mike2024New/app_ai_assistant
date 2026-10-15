@@ -173,7 +173,7 @@ class SettingsWindow:
         self._tts_ru_combobox.configure(values=self._settings.tts_get_speakers_list(lang='ru'))
         # выбор голоса для английской озвучки
         self._tts_en_combobox.set(self._settings.tts_get_current_speaker(lang='en'))
-        self._tts_ru_combobox.configure(values=self._settings.tts_get_speakers_list(lang='en'))
+        self._tts_en_combobox.configure(values=self._settings.tts_get_speakers_list(lang='en'))
 
     def reset(self):
         self._settings.reset_settings()
