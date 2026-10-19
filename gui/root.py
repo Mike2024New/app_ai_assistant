@@ -56,7 +56,7 @@ class MainWindowUi:
         self.root.minsize(width=min_width, height=min_height)
         self.root.resizable(width=resizable_width, height=resizable_height)
         self.root.update_idletasks()
-        self.center_window(win=self.root)  # окно теряется...
+        self.center_window(win=self.root)
 
     def start(self):
         self.root.mainloop()

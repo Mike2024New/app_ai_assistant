@@ -47,6 +47,7 @@ srv_tts/
 # мои заметки и занудство
 info.txt
 settings_editor.py
+helper.py
 
 
 # дополнительные файлы

@@ -1,22 +1,22 @@
 import asyncio, json
-from infrastructure_other import TimeUtils
+from infrastructure_path_utils import get_root_dir_path
 from pathlib import Path
 
 
 class EventBus:
-    def __init__(self, log_file_path: Path, maxsize: int = 1000):
+    def __init__(self, log_file_path: Path, log_file: bool = True, maxsize: int = 1000):
         self._lock = asyncio.Lock()
         self._log_file_path = log_file_path
+        self._log_file = log_file
         self._messages = asyncio.Queue(maxsize=maxsize)
-        self._time_utils = TimeUtils()
 
-    def log_message(self, message):
+    def log_message(self, message: dict):
+        if not self._log_file:
+            return
         with open(self._log_file_path, mode='a', encoding='utf-8') as f:
-            row = {'message': message, 'timestamp': self._time_utils.timestamp()}
-            f.write(json.dumps(row, ensure_ascii=False) + '\n')
+            f.write(json.dumps(message, ensure_ascii=False) + '\n')
 
-    async def add_message(self, message):
-        # точка записи сообщения в лог-файл
+    async def add_message(self, message: dict):
         await asyncio.to_thread(lambda: self.log_message(message=message))
         await self._messages.put(message)
 
@@ -29,8 +29,11 @@ class EventBus:
 
 
 async def main():
-    evbus = EventBus(log_file_path=Path('log.jsonl'))
-    await evbus.add_message(message='Демо')
+    from infrastructure_other import TimeUtils
+    time_utils = TimeUtils()
+
+    evbus = EventBus(log_file_path=get_root_dir_path() / 'log.jsonl', log_file=False)
+    await evbus.add_message(message={'message': 'demo', 'timestamp': time_utils.timestamp()})
     print(await evbus.get_message())
     print(await evbus.get_message())
 

@@ -24,7 +24,7 @@ class Launcher:
         self.queue = asyncio.Queue()
         # если корневая директория сервисов не передана явно, то по умолчанию поиск на папку на уровень выше
         self._root_dir = target_dir if target_dir else get_root_dir_path().parent
-        self.run_services: dict[str, int] = {}
+        self.run_services: dict[str, dict[str, int | None]] = {}
         self._lock = asyncio.Lock()
         self._pid_manager = PidManager(pid_file_path=get_root_dir_path() / 'pids.txt')
 
@@ -62,11 +62,11 @@ class Launcher:
         if not self._running:
             return
         tasks = []
-        for svc_name, port in self.run_services.items():
+        for svc_name, params in self.run_services.items():
             task = asyncio.create_task(
                 self._stop_server(
                     svc_name=svc_name,
-                    port=port,
+                    port=params['port'],
                     timeout_stop_server=timeout_stop_server
                 )
             )
@@ -87,8 +87,6 @@ class Launcher:
             log_level: Literal['debug', 'info', 'warning', 'error'] = 'info',
             timeout_run_server: float = 180.0,
     ):
-
-        # уведомить приложение о запуске
         self.queue.put_nowait(
             {
                 'timestamp': time_utils.timestamp(),
@@ -96,10 +94,11 @@ class Launcher:
                 'type': 'start',
             }
         )
-
-        port = find_free_port(start_port=8000, max_attempts=100, ignore_ports_list=list(self.run_services.values()))
+        self.run_services[svc_name] = {'port': None, 'pid': None}
+        ports = [p['port'] for p in self.run_services.values() if p['port'] is not None]
+        port = find_free_port(start_port=8000, max_attempts=100, ignore_ports_list=ports)
         async with self._lock:
-            self.run_services[svc_name] = port
+            self.run_services[svc_name]['port'] = port
 
         if EXE_MODE:
             # запуск в режиме обычного приложения
@@ -160,6 +159,7 @@ class Launcher:
             self.queue.put_nowait(f'Не получен pid для сервера {svc_name}')
             raise RuntimeError(f'Не получен pid для сервера {svc_name}')
         self._pid_manager.add(pid)
+        self.run_services[svc_name]['pid'] = pid
 
         # запуск сервера с параметрами
         res = await asyncio.to_thread(
@@ -222,11 +222,39 @@ class Launcher:
 
 
 if __name__ == '__main__':
+    import psutil
+
+
+    def temp(pid: int, interval=1):
+        p = psutil.Process(pid)
+        try:
+            return {
+                'cpu': p.cpu_percent(interval=interval),
+                'ram': round(p.memory_info().rss / 1024 ** 2, 1)
+            }
+        except psutil.NoSuchProcess:
+            return {
+                'cpu': 0,
+                'ram': 0
+            }
+
+
     async def example():
         launcher = Launcher()
         # запуск наблюдателя, нужно передать callback
         asyncio.create_task(launcher.observer(callback=lambda x: print(x)))
         await launcher.start()
+
+        async def monitor():
+            while True:
+                await asyncio.sleep(1)
+                for srv, params in launcher.run_services.items():
+                    try:
+                        print(f'{srv}: {temp(pid=params["pid"])}')
+                    except psutil.NoSuchProcess:
+                        return
+
+        asyncio.create_task(monitor())
         await asyncio.to_thread(lambda: input('...'))
         await launcher.stop()
 

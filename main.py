@@ -1,3 +1,6 @@
+import asyncio
+import threading
+
 from gui.root import MainWindowUi
 from gui.ai_window import AIWindow
 from gui.settings_window import SettingsWindow
@@ -21,17 +24,21 @@ main_window = MainWindowUi(
     nav_pages_combobox=True, nav_pages_buttons=True,
 )
 
-# # В следующей версии нужно будет доделать. Остановку запущенных процессов при нажатии крестика
-# def root_protocol():
-#     # остановка сервисов
-#     main_window.root.after(
-#         0,
-#         lambda: threading.Thread(target=asyncio.run, args=(ai_window.stop(),), daemon=True).start()
-#     )
-#     main_window.root.destroy()
-#
-# main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
 
+def root_protocol():
+    # остановка сервисов (выход при наж. на закрыть)
+    def stop_worker():
+        try:
+            asyncio.run(ai_window.stop())  # метод идемпотентен (флаг is_running)
+        except Exception as err:
+            print(f'Ошибка при остановке потока {err}')
+        finally:
+            main_window.root.after(0, main_window.root.destroy)
+
+    threading.Thread(target=stop_worker, daemon=True).start()
+
+
+main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
 
 main_window.root.iconbitmap(get_root_dir_path() / 'icon.ico')
 main_window.set_page('ai_window')

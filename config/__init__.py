@@ -1,5 +1,5 @@
-from config.main import settings, settings_manager, time_utils, EXE_MODE, history_messages_json
+from config.main import settings, settings_manager, time_utils, EXE_MODE, history_messages_json, event_bus
 
 __all__ = [
-    'settings', 'settings_manager', 'time_utils', 'EXE_MODE', 'history_messages_json',
+    'settings', 'settings_manager', 'time_utils', 'EXE_MODE', 'history_messages_json', 'event_bus',
 ]

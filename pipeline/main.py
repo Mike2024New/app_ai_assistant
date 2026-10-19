@@ -42,13 +42,13 @@ class Pipeline:
             await asyncio.gather(self._llm_task, return_exceptions=True)  # придавить задачу
         await self._tts.interrupt()
 
-    async def start(self, services: dict[str, int]):
+    async def start(self, services: dict[str, dict[str, int]]):
         if self._running:
             return
         self._running = True
-        self._stt: STTClient | None = STTClient(port=services['srv_stt'], event=self._event)
-        self._tts: TTSClient | None = TTSClient(port=services['srv_tts'])
-        self._llm: LLMClient | None = LLMClient(port=services['srv_llm'], event=self._event)
+        self._stt: STTClient | None = STTClient(port=services['srv_stt']['port'], event=self._event)
+        self._tts: TTSClient | None = TTSClient(port=services['srv_tts']['port'])
+        self._llm: LLMClient | None = LLMClient(port=services['srv_llm']['port'], event=self._event)
 
         # загрузка истории сообщений (продолжение диалога с llm - примитивная долговременная память)
         if not settings.services['srv_llm']['one_message_mode'] and history_messages_json.exists():

@@ -1,5 +1,5 @@
-import asyncio
-import threading
+import psutil
+import os, asyncio, threading
 import customtkinter as ctk
 from launcher import Launcher
 from pipeline import Pipeline
@@ -10,9 +10,11 @@ class AIWindow:
         self._running = False
         self._launcher: Launcher | None = None
         self._pipeline: Pipeline | None = None
-        self._button: ctk.CTkButton | None = None
+        self.button: ctk.CTkButton | None = None
         self._indicator_frame: ctk.CTkFrame | None = None
         self._text_area: ctk.CTkTextbox | None = None
+        self.row_state: ctk.CTkLabel | None = None
+        self.storage: dict | None = None
 
     def pipeline_callback(self, res):
         """
@@ -41,22 +43,26 @@ class AIWindow:
         # конфигурация кнопки переведенной в состояние остановки (подготовка к stop)
         if self._running:
             return
+        self.button.configure(state='disabled')
         self._running = True
         self._launcher = Launcher()
         self._pipeline = Pipeline()
-
-        self._button.after(
-            0, lambda: self._button.configure(
-                text='stop',
-                command=lambda: threading.Thread(target=asyncio.run, args=(self.stop(),), daemon=True).start(),
-            )
-        )  # noqa
+        self.row_state.after(0, self.row_state.configure(text_color='gold2', text='запуск сервисов, подождите...'))
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='gold2'))  # noqa
         observer_launcher_task = asyncio.create_task(self._launcher.observer(self.launcher_callback))
         await self._launcher.start()
         await self._pipeline.start(services=self._launcher.run_services)
         observer_pipeline_task = asyncio.create_task(self._pipeline.observer(self.pipeline_callback))
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='steelblue'))  # noqa
+        self.row_state.after(0, self.row_state.configure(text_color='green', text='AI ассистент запущен'))
+        self.button.configure(state='normal')
+        self.button.after(
+            0, lambda: self.button.configure(
+                text='stop',
+                command=lambda: threading.Thread(target=asyncio.run, args=(self.stop(),), daemon=True).start(),
+            )
+        )  # noqa
+        self.storage['services'] = self._launcher.run_services
         await observer_pipeline_task
         await observer_launcher_task
 
@@ -64,24 +70,37 @@ class AIWindow:
         if not self._running:
             return
 
+        self.button.configure(state='disabled')
+        self.row_state.after(0, self.row_state.configure(text_color='gold2', text='остановка сервисов, подождите...'))
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='gold2'))  # noqa
         await self._pipeline.stop()
         await self._launcher.stop()
 
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='gray18'))  # noqa
         # перевести кнопку обратно в режим start
-        self._button.after(
-            0, lambda: self._button.configure(
+        self.button.after(
+            0, lambda: self.button.configure(
                 text='start',
                 command=lambda: threading.Thread(target=asyncio.run, args=(self.start(),), daemon=True).start(),
             )
         )
+        self.row_state.after(0, self.row_state.configure(text_color='green', text='AI ассистент остановлен'))
+        self.button.configure(state='normal')
         self._launcher = None
         self._pipeline = None
         self._running = False
 
+    def temp(self, pid: int, interval=0):
+        p = psutil.Process(pid)
+        return {
+            'cpu': p.cpu_percent(interval=interval),
+            'ram': round(p.memory_info().rss / 1024 ** 2, 1)
+        }
+
     def window(self, _root: ctk.CTk, frame: ctk.CTkFrame, row_state: ctk.CTkLabel, _storage: dict):
         """Основной метод окна, вход в ai ассистента."""
+        self.row_state = row_state
+        self.storage = _storage
         frame_left = ctk.CTkFrame(frame, fg_color='transparent', border_width=0)
         self._indicator_frame = ctk.CTkFrame(frame_left)
         self._indicator_frame.configure(
@@ -89,14 +108,14 @@ class AIWindow:
         )
         self._indicator_frame.pack(expand=True, padx=10, pady=0, anchor='n')
         # запуск диалога с llm (активация при нажатии кнопки)
-        self._button = ctk.CTkButton(
+        self.button = ctk.CTkButton(
             frame_left, text='start',
             command=lambda: threading.Thread(target=asyncio.run, args=(self.start(),), daemon=True).start()
         )
-        self._button.pack(expand=True, fill='x', padx=10, pady=0, anchor='s')
+        self.button.pack(expand=True, fill='x', padx=10, pady=0, anchor='s')
         frame_left.pack(expand=False, fill='both', side='left', padx=10, pady=10)
         # виджеты
-        row_state.configure(text='диалог с ai', text_color='gold3')
+        row_state.configure(text='нажмите start для запуска ассистента', text_color='green')
         frame_right = ctk.CTkFrame(frame)
         self._text_area = ctk.CTkTextbox(frame_right, width=550)
         # добавить переключение в зависимости от темы, так как на светлой плохо видно белый текст
