@@ -46,9 +46,9 @@ class Pipeline:
         if self._running:
             return
         self._running = True
-        self._stt: STTClient | None = STTClient(port=services['srv_stt']['port'], event=self._event)
-        self._tts: TTSClient | None = TTSClient(port=services['srv_tts']['port'])
-        self._llm: LLMClient | None = LLMClient(port=services['srv_llm']['port'], event=self._event)
+        self._stt = STTClient(port=services['srv_stt']['port'], event=self._event)
+        self._tts = TTSClient(port=services['srv_tts']['port'])
+        self._llm = LLMClient(port=services['srv_llm']['port'], event=self._event)
 
         # загрузка истории сообщений (продолжение диалога с llm - примитивная долговременная память)
         if not settings.services['srv_llm']['one_message_mode'] and history_messages_json.exists():
