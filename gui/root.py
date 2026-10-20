@@ -29,8 +29,11 @@ class MainWindowUi:
         self._page_combobox: ctk.CTkComboBox | None = None
         # установка темы
         ctk.set_appearance_mode(start_theme)
-        # from infrastructure_path_utils import get_root_dir_path
-        # ctk.set_default_color_theme(str(get_root_dir_path() / 'themes' / 'my_theme.json'))
+        from infrastructure_path_utils import get_root_dir_path
+        my_theme_path = get_root_dir_path() / 'themes' / 'my_theme.json'
+        # подключение стилей
+        if my_theme_path.exists():
+            ctk.set_default_color_theme(str(my_theme_path))
         self.root = ctk.CTk()
         self._body_frame: ctk.CTkFrame | None = None
 
