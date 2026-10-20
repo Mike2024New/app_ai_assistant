@@ -44,6 +44,9 @@ srv_llm/
 srv_stt/
 srv_tts/
 
+# файл с системным промптом и выжимкой последнего диалога
+summary_messages.json
+
 # мои заметки и занудство
 info.txt
 settings_editor.py

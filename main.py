@@ -6,6 +6,7 @@ from gui.ai_window import AIWindow
 from gui.settings_window import SettingsWindow
 from gui.monitor_window import MonitorWindow
 from infrastructure_path_utils import get_root_dir_path
+from config import logger
 
 ai_window = AIWindow()  # главное окно для диалога с ИИ
 settings_window = SettingsWindow()  # настройки
@@ -25,13 +26,14 @@ main_window = MainWindowUi(
 )
 
 
+@logger.catch
 def root_protocol():
     # остановка сервисов (выход при наж. на закрыть)
     def stop_worker():
         try:
             asyncio.run(ai_window.stop())  # метод идемпотентен (флаг is_running)
         except Exception as err:
-            print(f'Ошибка при остановке потока {err}')
+            logger.error(f'Ошибка при остановке потока {err}')
         finally:
             main_window.root.after(0, main_window.root.destroy)
 

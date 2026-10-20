@@ -106,6 +106,7 @@ class MonitorWindow:
             text_area.delete('1.0', 'end')
             text_area.insert('1.0', info)
             threading.Thread(target=self.monitor, daemon=True).start()
+            btn.configure(state='disabled')
 
         btn = ctk.CTkButton(frame, text='start', cursor='hand2')
         btn.configure(command=lambda: callback())

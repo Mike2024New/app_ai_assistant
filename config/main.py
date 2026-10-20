@@ -3,16 +3,25 @@ from infrastructure_settings_manager import get_settings_manager
 from config.schemas import Settings
 from infrastructure_other.time_utils import TimeUtils
 from config.default_settings import default_settings
-from config.event_bus import EventBus
-import sys
+from infrastructure_log_utils import Logger
+import sys, uuid
 
 __all__ = [
     'settings', 'settings_manager',
     'time_utils', 'EXE_MODE', 'history_messages_json',
-    'event_bus',
+    'logger', 'request_id',
 ]
 
-event_bus = EventBus(log_file_path=get_root_dir_path() / 'log.jsonl')
+request_id = str(uuid.uuid4())[:8]
+
+logger = Logger(
+    log_path=get_root_dir_path() / 'logs/app.log',
+    rotation='10 MB', retention=10,
+    compression='zip',
+    fmt='{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {message}'
+)
+
+logger.set_logger(request_id=request_id)
 
 EXE_MODE = getattr(sys, 'frozen', False)  # сейчас режим разработчика или запуск из кода?
 history_messages_json = get_root_dir_path() / 'summary_messages.json'
