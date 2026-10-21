@@ -1,16 +1,21 @@
 import json
 from typing import Literal
-from config import settings, settings_manager
+from config import settings as config_settings
+from config import settings_manager
 from infrastructure_path_utils import get_root_dir_path
 from settings_editor.default_settings import default_settings
 from config.schemas import Settings
+
+settings = config_settings
 
 
 class SettingsEditor:
 
     @staticmethod
     def reset_settings() -> Settings:
+        global settings
         new_settings = Settings.model_validate(default_settings)
+        settings = new_settings
         settings_manager.apply_new_settings(settings=new_settings)
         return new_settings
 

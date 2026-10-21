@@ -1,9 +1,10 @@
 import asyncio, json
 from string import ascii_lowercase
-from config import settings, time_utils, history_messages_json
+from config import settings, time_utils, history_messages_json, commands
 from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
+from pipeline.comand_executor import executor
 
 """
 Реализация полезной нагрузки приложения (пайплайн).
@@ -112,9 +113,6 @@ class Pipeline:
             return
 
         # отлов команд, здесь именно можно ловить ассистентов и передавать точечный запрос в llm
-        from pathlib import Path
-        import os
-
         if settings.assistant:
             for i in (settings.assistant_name,):
                 first_word = text.split()[0].lower().strip('.,!?;:') if text else ''
@@ -122,20 +120,27 @@ class Pipeline:
                     command = ' '.join(text.split()[1:]).strip().lower()
 
                     self.queue.put_nowait({
-                        'role': 'user', 'text': f'cmd: {text.strip()}', 'timestamp': time_utils.timestamp(),
+                        'role': 'user', 'text': f'cmd: {text}'.strip(), 'timestamp': time_utils.timestamp(),
                         'type': 'process',
                     })
 
-                    def path_home_callback():
-                        os.startfile(Path.home())
-
-                    commands = {
-                        'домашняя папка': {'func': lambda: path_home_callback()},
-                    }
-
                     # сперва грубый эвристичный поиск
                     if command in commands:
-                        commands[command]['func']()
+                        try:
+                            res = executor(command)
+                            if res:
+                                await self._tts.say(
+                                    text=res,
+                                    speaker=settings.speakers["ru"],
+                                    add=True
+                                )
+                        except Exception:  # noqa
+                            await self._tts.say(
+                                text='ошибка во время выполнения команды',
+                                speaker=settings.speakers["ru"],
+                                add=True
+                            )
+
                     else:
                         # в этой точке можно отправить сырой запрос llm без истории в one message, чтобы он помог определить
                         await self._tts.say(text='Не распознанная команда', speaker=settings.speakers["ru"], add=True)

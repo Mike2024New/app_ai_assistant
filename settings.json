@@ -1,9 +1,9 @@
 {
   "app_name": "app",
-  "companion": true,
+  "companion": false,
   "assistant": true,
   "whisper_timeout_sec": 1.0,
-  "assistant_name": "ассистент",
+  "assistant_name": "ви",
   "stt_numbers_filter": true,
   "speakers": {
     "en": "en_101",
@@ -23,7 +23,7 @@
     "srv_stt": {
       "samplerate": 16000,
       "blocksize": 1024,
-      "model": "small"
+      "model": "medium"
     },
     "srv_tts": {
       "samplerate": 48000,

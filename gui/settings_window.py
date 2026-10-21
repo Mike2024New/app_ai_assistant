@@ -226,4 +226,5 @@ class SettingsWindow:
 
     def reset(self):
         self._settings.reset_settings()
+        print(self._settings.stt_get_current_model())
         self.set_settings()

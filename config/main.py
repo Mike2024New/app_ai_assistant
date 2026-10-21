@@ -1,17 +1,19 @@
+import sys, uuid, json
 from infrastructure_path_utils import get_root_dir_path
 from infrastructure_settings_manager import get_settings_manager
 from config.schemas import Settings
 from infrastructure_other.time_utils import TimeUtils
 from config.default_settings import default_settings
 from infrastructure_log_utils import Logger
-import sys, uuid
+from config.first_run import create_scripts_folder
 
 __all__ = [
     'settings', 'settings_manager',
     'time_utils', 'EXE_MODE', 'history_messages_json',
-    'logger', 'request_id',
+    'logger', 'request_id', 'commands',
 ]
 
+create_scripts_folder()
 request_id = str(uuid.uuid4())[:8]
 
 logger = Logger(
@@ -30,6 +32,14 @@ settings_manager = get_settings_manager(
     json_file_path=get_root_dir_path() / 'settings.json',
     settings_model=Settings.model_validate(default_settings),  # взять модель по умолчанию
 )
+
+# чтение команд для ассистента
+try:
+    with open(file=get_root_dir_path() / 'scripts.json', mode='r', encoding='utf-8') as f:
+        commands = json.loads(f.read())
+        print(commands)
+except Exception:  # noqa
+    commands = {}
 
 settings = settings_manager.settings
 time_utils = TimeUtils(timestamp_fmt='%d.%m.%Y %H:%M:%S.%f')
