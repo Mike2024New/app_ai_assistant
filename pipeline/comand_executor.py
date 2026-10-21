@@ -1,7 +1,7 @@
 import sys
 import subprocess
 from pathlib import Path
-from config import commands
+from config import commands, logger
 
 from infrastructure_path_utils import find_interpreter_by_root_dir, get_root_dir_path
 
@@ -27,22 +27,34 @@ def executor(cmd_name: str, *args):
     if not file.exists():
         return 'Файл с скриптом не найден'
 
-    # поиск .venv скрипта, если его нет, то попытаться выполнить от текущего .venv
+    # 1. Искать .venv рядом со скриптом
     python_exe_interpr_path = find_interpreter_by_root_dir(file.parent)
+
+    # 2. Если нет, искать .venv в корне проекта
     if python_exe_interpr_path is None:
-        python_exe_interpr_path = sys.executable
+        python_exe_interpr_path = find_interpreter_by_root_dir(get_root_dir_path())
+
+    # 3. Если нашли .venv — использовать его без флага
+    if python_exe_interpr_path is not None:
+        cmd = [python_exe_interpr_path]
+    else:
+        # 4. Если .venv нет вообще — использовать app.exe с флагом
+        cmd = [sys.executable, '--run-script']
 
     default_args = commands[cmd_name]['args'] if not args else args
     timeout = commands[cmd_name]['timeout']
 
-    cmd = [python_exe_interpr_path, file, *default_args]
+    cmd.extend([str(file), *default_args])
+
     try:
-        answer = subprocess.run(cmd, capture_output=True, timeout=timeout)
+        answer = subprocess.run(cmd, capture_output=True, timeout=timeout, text=True)
     except subprocess.TimeoutExpired:
         return 'Команда не выполнена, превышено время ожидания.'
     if answer.returncode != 0:
+        print(answer)
+        logger.error(f'Ошибка при выплонении команды `{cmd_name}`: return_code!=0 {answer.stderr}')
         return 'Ошибка при выполнении команды.'  # сообщение для ассистента
-    res = answer.stdout.decode('utf-8').strip()
+    res = answer.stdout.strip()
     return res or None  # вернуть ассистенту  ответ если есть
 
 

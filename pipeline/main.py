@@ -1,6 +1,6 @@
 import asyncio, json
 from string import ascii_lowercase
-from config import settings, time_utils, history_messages_json, commands
+from config import settings, time_utils, history_messages_json, commands, logger
 from clients import STTClient
 from clients import TTSClient
 from clients import LLMClient
@@ -134,7 +134,8 @@ class Pipeline:
                                     speaker=settings.speakers["ru"],
                                     add=True
                                 )
-                        except Exception:  # noqa
+                        except Exception as err:
+                            logger.exception(f'[ pipeline.command ] Ошибка выполнения команды {command}.  {err}')
                             await self._tts.say(
                                 text='ошибка во время выполнения команды',
                                 speaker=settings.speakers["ru"],
