@@ -1,5 +1,10 @@
 {
   "app_name": "app",
+  "companion": true,
+  "assistant": true,
+  "whisper_timeout_sec": 1.0,
+  "assistant_name": "ассистент",
+  "stt_numbers_filter": true,
   "speakers": {
     "en": "en_101",
     "ru": "kseniya"

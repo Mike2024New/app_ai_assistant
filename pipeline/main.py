@@ -34,10 +34,12 @@ class Pipeline:
         self._stt_observer_task: asyncio.Task | None = None
         self._stt_callback_task: asyncio.Task | None = None
         self._llm_task: asyncio.Task | None = None
+        self._stop_assistant_wait: bool = False
 
     async def observer_callback(self):
         self._llm.interrupt()
         if self._llm_task is not None and not self._llm_task.done():
+            # проверить это место, ибо во время резюме зависает !!!
             self._llm_task.cancel()
             await asyncio.gather(self._llm_task, return_exceptions=True)  # придавить задачу
         await self._tts.interrupt()
@@ -75,6 +77,7 @@ class Pipeline:
         self._stt_callback_task = asyncio.create_task(self._stt.listen(callback=self._stt_callback))
 
     async def stop(self):
+        self._stop_assistant_wait = True
         if not self._running:
             return
 
@@ -104,12 +107,46 @@ class Pipeline:
         self._llm_first_message = True
 
     async def _stt_callback(self, text):
-        # реакция на полученную фразу
+        if self._stop_assistant_wait:
+            # идет суммаризация после выключения ассистента -> игнорировать вхождения на микрофон
+            return
+
+        # отлов команд, здесь именно можно ловить ассистентов и передавать точечный запрос в llm
+        from pathlib import Path
+        import os
+
+        if settings.assistant:
+            for i in (settings.assistant_name,):
+                first_word = text.split()[0].lower().strip('.,!?;:') if text else ''
+                if first_word.lower() == i.lower():
+                    command = ' '.join(text.split()[1:]).strip().lower()
+
+                    self.queue.put_nowait({
+                        'role': 'user', 'text': f'cmd: {text.strip()}', 'timestamp': time_utils.timestamp(),
+                        'type': 'process',
+                    })
+
+                    def path_home_callback():
+                        os.startfile(Path.home())
+
+                    commands = {
+                        'домашняя папка': {'func': lambda: path_home_callback()},
+                    }
+
+                    # сперва грубый эвристичный поиск
+                    if command in commands:
+                        commands[command]['func']()
+                    else:
+                        # в этой точке можно отправить сырой запрос llm без истории в one message, чтобы он помог определить
+                        await self._tts.say(text='Не распознанная команда', speaker=settings.speakers["ru"], add=True)
+                    return
+
         self.queue.put_nowait({
             'role': 'user', 'text': text.strip(), 'timestamp': time_utils.timestamp(), 'type': 'process',
         })
-        # отправить полученную от пользователя фразу в ИИ
-        self._llm_task = asyncio.create_task(self._llm.ask_and_sentence(prompt=text, callback=self._tts_callback))
+        if settings.companion:
+            # отправить полученную от пользователя фразу в ИИ
+            self._llm_task = asyncio.create_task(self._llm.ask_and_sentence(prompt=text, callback=self._tts_callback))
 
     async def observer(self, callback):
         """Обсервер, наблюдает за очередью (для ui и консольных интерфейсов), запускается отдельно через create_task"""

@@ -14,6 +14,25 @@ class SettingsEditor:
         settings_manager.apply_new_settings(settings=new_settings)
         return new_settings
 
+    # ========================== ALL ==========================
+    @staticmethod
+    def companion_get():
+        return settings.companion
+
+    @staticmethod
+    def companion_set(val: bool):
+        settings.companion = val
+        settings_manager.apply_new_settings(settings=settings)
+
+    @staticmethod
+    def assistant_get():
+        return settings.assistant
+
+    @staticmethod
+    def assistant_set(val: bool):
+        settings.assistant = val
+        settings_manager.apply_new_settings(settings=settings)
+
     # ========================== TTS ==========================
     @staticmethod
     def tts_get_speakers_list(lang: Literal['ru', 'en']) -> list[str]:
@@ -46,6 +65,17 @@ class SettingsEditor:
         settings_manager.apply_new_settings(settings=settings)
 
     # ========================== STT ==========================
+    @staticmethod
+    def stt_get_numbers_filter():
+        """Установка фильтра чисел -> выдает числа текстом"""
+        return settings.stt_numbers_filter
+
+    @staticmethod
+    def stt_set_numbers_filter(val: bool):
+        """Установка фильтра чисел -> выдает числа текстом"""
+        settings.stt_numbers_filter = val
+        settings_manager.apply_new_settings(settings=settings)
+
     @staticmethod
     def stt_get_models_list():
         models_info_path = get_root_dir_path().parent / 'srv_stt' / 'resources' / 'models'

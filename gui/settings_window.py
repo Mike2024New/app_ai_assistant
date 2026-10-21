@@ -24,6 +24,12 @@ class SettingsWindow:
         self._stt_model_combobox: ctk.CTkComboBox | None = None
         self._tts_ru_combobox: ctk.CTkComboBox | None = None
         self._tts_en_combobox: ctk.CTkComboBox | None = None
+
+        self._stt_numbers_filter_swith: ctk.CTkSwitch | None = None
+
+        self._companion_swith: ctk.CTkSwitch | None = None
+        self._assistant_swith: ctk.CTkSwitch | None = None
+
         self._padx, self._pady = 10, 10
 
     def apply_settings(self):
@@ -40,8 +46,14 @@ class SettingsWindow:
             self._settings.llm_set_processor_power_percentage(val=int(self._llm_processor_power_percentage.get()))
             # третья группа полей
             self._settings.stt_set_current_model(model=self._stt_model_combobox.get())
+
+            self._settings.stt_set_numbers_filter(val=bool(self._stt_numbers_filter_swith.get()))
+
             self._settings.tts_set_current_speaker(speaker=self._tts_ru_combobox.get(), lang='ru')
             self._settings.tts_set_current_speaker(speaker=self._tts_en_combobox.get(), lang='en')
+
+            self._settings.companion_set(val=bool(self._companion_swith.get()))
+            self._settings.assistant_set(val=bool(self._assistant_swith.get()))
 
             msg = 'Настройки сохранены и вступят в силу после перезагрузки ассистента'
             self._row_state.configure(text_color='green4', text=msg)
@@ -133,6 +145,13 @@ class SettingsWindow:
         label.pack(expand=False, side='left', fill='x')
         self._stt_model_combobox = ctk.CTkComboBox(frame5, width=200)
         self._stt_model_combobox.pack(expand=False, fill='x', side='right')
+
+        frame5_5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame5_5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._stt_numbers_filter_swith = ctk.CTkSwitch(frame5_5, text='Числа текстом (если подключен whisper)')
+        self._stt_numbers_filter_swith.set(True)
+        self._stt_numbers_filter_swith.pack(expand=False, fill='x', side='right')
+
         # выбор tts модели и голоса
         # настройки для ru озвучки
         frame6 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
@@ -148,6 +167,18 @@ class SettingsWindow:
         label.pack(expand=False, side='left', fill='x')
         self._tts_en_combobox = ctk.CTkComboBox(frame7, width=200)
         self._tts_en_combobox.pack(expand=False, fill='x', side='right')
+
+        frame8 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame8.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._companion_swith = ctk.CTkSwitch(frame8, text='Компаньон вкл')
+        self._companion_swith.set(True)
+        self._companion_swith.pack(expand=False, fill='x')
+
+        frame9 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame9.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._assistant_swith = ctk.CTkSwitch(frame9, text='Ассистент вкл')
+        self._assistant_swith.set(True)
+        self._assistant_swith.pack(expand=False, fill='x')
 
         # кнопки нижней панели (применить)
         default_btn = ctk.CTkButton(frame, text='по умолчанию', cursor='hand2', command=lambda: self.reset())
@@ -185,6 +216,13 @@ class SettingsWindow:
         # выбор голоса для английской озвучки
         self._tts_en_combobox.set(self._settings.tts_get_current_speaker(lang='en'))
         self._tts_en_combobox.configure(values=self._settings.tts_get_speakers_list(lang='en'))
+
+        # фильтр числа текстом для whisper
+        self._stt_numbers_filter_swith.set(self._settings.stt_get_numbers_filter())
+
+        # галочки включения / выключения компаньона и ассистента
+        self._companion_swith.set(self._settings.companion_get())
+        self._assistant_swith.set(self._settings.assistant_get())
 
     def reset(self):
         self._settings.reset_settings()
