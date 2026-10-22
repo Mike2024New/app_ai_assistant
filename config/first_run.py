@@ -21,6 +21,7 @@ def start():
         if Path(select).exists():
             os.startfile(select)
     print('открываю папку', flush=True)
+    sys.stdout.flush()
 
 
 if __name__ == '__main__':
