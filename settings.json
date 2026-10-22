@@ -1,6 +1,6 @@
 {
   "app_name": "app",
-  "companion": true,
+  "companion": false,
   "assistant": true,
   "whisper_timeout_sec": 1.0,
   "assistant_name": "ассистент",

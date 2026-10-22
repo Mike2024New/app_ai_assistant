@@ -20,6 +20,18 @@ class LLMClient:
         if not res.json().get('running', None):
             raise RuntimeError(f'движок сервера не запущен')
 
+    async def ask_one(self, prompt: str):
+        """Прямой служебный запрос к llm"""
+        res = await asyncio.to_thread(
+            lambda: requests.post(
+                url=f'http://localhost:{self._port}/ask_one/',
+                json={'prompt': prompt},
+            )
+        )
+        if res.status_code != 200:
+            raise RuntimeError(f'LLM ask_one error: {res.status_code}')
+        return res.json().get('result')
+
     async def ask(self, prompt: str, callback):
         async with websockets.connect(f'ws://localhost:{self._port}/ws') as ws:
             """Пример использования, отправка промпта и получение готовых токенов"""

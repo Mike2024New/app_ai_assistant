@@ -79,6 +79,7 @@ class Pipeline:
 
     async def stop(self):
         self._stop_assistant_wait = True
+        await self._tts.interrupt()  # остановить tts если он ещё говорит
         if not self._running:
             return
 
@@ -111,40 +112,72 @@ class Pipeline:
         if self._stop_assistant_wait:
             # идет суммаризация после выключения ассистента -> игнорировать вхождения на микрофон
             return
-
         # отлов команд, здесь именно можно ловить ассистентов и передавать точечный запрос в llm
         if settings.assistant:
             for i in (settings.assistant_name,):
                 first_word = text.split()[0].lower().strip('.,!?;:') if text else ''
                 if first_word.lower() == i.lower():
                     command = ' '.join(text.split()[1:]).strip().lower()
-
                     self.queue.put_nowait({
                         'role': 'user', 'text': f'cmd: {text}'.strip(), 'timestamp': time_utils.timestamp(),
                         'type': 'process',
                     })
 
-                    # сперва грубый эвристичный поиск
-                    if command in commands:
-                        try:
-                            res = executor(command)
-                            if res:
-                                await self._tts.say(
-                                    text=res,
-                                    speaker=settings.speakers["ru"],
-                                    add=True
-                                )
-                        except Exception as err:
-                            logger.exception(f'[ pipeline.command ] Ошибка выполнения команды {command}.  {err}')
+                    if command not in commands:
+                        commands_list = [f'{i}.`{c}`' for i, c in enumerate(list(commands.keys()))]
+                        prompt = (
+                            f"Ты — модуль распознавания команд. Твоя задача — сопоставить фразу пользователя со списком команд.\n"
+                            f"Список команд: {commands_list}\n"
+                            f"Фраза пользователя: '{command}'\n\n"
+                            f"Правила:\n"
+                            f"1. Если фраза по смыслу совпадает с одной из команд, верни ТОЛЬКО её номер (число)\n"
+                            f"2. Если фраза не подходит ни к одной команде, верни ТОЛЬКО '-1'\n"
+                            f"3. Никаких объяснений, никаких лишних слов. Только номер команды (число) или -1\n\n"
+                        )
+                        res = await self._llm.ask_one(prompt=prompt)
+                        res = res.strip()
+                        logger.debug(f'[ pipeline ] на запрос {command} ассистент распознал {res} из {commands_list}')
+                        if res == '-1':
                             await self._tts.say(
-                                text='ошибка во время выполнения команды',
+                                text='не удалось распознать команду',
                                 speaker=settings.speakers["ru"],
                                 add=True
                             )
+                            return
 
-                    else:
-                        # в этой точке можно отправить сырой запрос llm без истории в one message, чтобы он помог определить
-                        await self._tts.say(text='Не распознанная команда', speaker=settings.speakers["ru"], add=True)
+                        try:
+                            command = list(commands.keys())[int(res)]
+                        except Exception as err:
+                            logger.error(
+                                f'[ pipeline ] ошибка при выполнении команды и парсинга индекса от ИИ: {err}, ассистент ответил {res}')
+                            await self._tts.say(
+                                text='не удалось распознать команду',
+                                speaker=settings.speakers["ru"],
+                                add=True
+                            )
+                            return
+                    try:
+                        res = executor(command)
+                        if res is not None:
+                            res = res.strip()
+                        self.queue.put_nowait({
+                            'role': 'user', 'text': f'cmd: {res}', 'timestamp': time_utils.timestamp(),
+                            'type': 'process',
+                        })
+                        logger.info(f'[ pipeline ] выполнение команды `{command}`')
+                        if res:
+                            await self._tts.say(
+                                text=res,
+                                speaker=settings.speakers["ru"],
+                                add=True
+                            )
+                    except Exception as err:
+                        logger.exception(f'[ pipeline ] Ошибка выполнения команды {command}.  {err}')
+                        await self._tts.say(
+                            text='ошибка во время выполнения команды',
+                            speaker=settings.speakers["ru"],
+                            add=True
+                        )
                     return
 
         self.queue.put_nowait({

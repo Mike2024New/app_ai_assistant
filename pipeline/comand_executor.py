@@ -43,20 +43,19 @@ def executor(cmd_name: str, *args):
 
     default_args = commands[cmd_name]['args'] if not args else args
     timeout = commands[cmd_name]['timeout']
-
     cmd.extend([str(file), *default_args])
 
     try:
-        answer = subprocess.run(cmd, capture_output=True, timeout=timeout, text=True)
+        answer = subprocess.run(cmd, capture_output=True, timeout=timeout, encoding='utf-8')
     except subprocess.TimeoutExpired:
         return 'Команда не выполнена, превышено время ожидания.'
     if answer.returncode != 0:
         print(answer)
-        logger.error(f'Ошибка при выплонении команды `{cmd_name}`: return_code!=0 {answer.stderr}')
+        logger.error(f'[ comand_executor ] Ошибка при выплонении команды `{cmd_name}`: return_code!=0 {answer.stderr}')
         return 'Ошибка при выполнении команды.'  # сообщение для ассистента
     res = answer.stdout.strip()
     return res or None  # вернуть ассистенту  ответ если есть
 
 
 if __name__ == '__main__':
-    print(executor('рабочий стол', 'desktop'))
+    print(executor('открой компьютер'))
