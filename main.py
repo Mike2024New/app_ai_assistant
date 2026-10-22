@@ -11,6 +11,7 @@ if '--run-script' in sys.argv:
     with open(script_path, 'r', encoding='utf-8') as f:
         code = f.read()
     exec(code, {'__name__': '__main__', '__file__': str(script_path)})
+    sys.stdout.flush()
     sys.exit(0)
 
 # запуск программы в обычном режиме

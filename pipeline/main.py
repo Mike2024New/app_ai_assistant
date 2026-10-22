@@ -9,7 +9,7 @@ from pipeline.comand_executor import executor
 """
 Реализация полезной нагрузки приложения (пайплайн).
 """
-
+LOG_NAME = 'PIPELINE'
 
 def is_russian(text: str) -> bool:
     """Выбор спикера в зависимости от того каких слов больше"""
@@ -135,9 +135,10 @@ class Pipeline:
                             f"3. Никаких объяснений, никаких лишних слов. Только номер команды (число) или -1\n\n"
                         )
                         res = await self._llm.ask_one(prompt=prompt)
-                        res = res.strip()
-                        logger.debug(f'[ pipeline ] на запрос {command} ассистент распознал {res} из {commands_list}')
-                        if res == '-1':
+                        logger.debug(
+                            f'[ {LOG_NAME} ][ ai_analysis ] на запрос `{command}` ассистент распознал `{res}` из `{commands_list}`'
+                        )
+                        if '-1' in res:
                             await self._tts.say(
                                 text='не удалось распознать команду',
                                 speaker=settings.speakers["ru"],
@@ -149,7 +150,7 @@ class Pipeline:
                             command = list(commands.keys())[int(res)]
                         except Exception as err:
                             logger.error(
-                                f'[ pipeline ] ошибка при выполнении команды и парсинга индекса от ИИ: {err}, ассистент ответил {res}')
+                                f'[ {LOG_NAME} ][ ai_analysis ] ошибка при выполнении команды и парсинга индекса от ИИ: {err}, ассистент ответил {res}')
                             await self._tts.say(
                                 text='не удалось распознать команду',
                                 speaker=settings.speakers["ru"],
@@ -164,7 +165,7 @@ class Pipeline:
                             'role': 'user', 'text': f'cmd: {res}', 'timestamp': time_utils.timestamp(),
                             'type': 'process',
                         })
-                        logger.info(f'[ pipeline ] выполнение команды `{command}`')
+                        logger.info(f'[ {LOG_NAME} ][ assistant_command ] выполнение команды `{command}`')
                         if res:
                             await self._tts.say(
                                 text=res,
@@ -172,7 +173,7 @@ class Pipeline:
                                 add=True
                             )
                     except Exception as err:
-                        logger.exception(f'[ pipeline ] Ошибка выполнения команды {command}.  {err}')
+                        logger.exception(f'[ {LOG_NAME} ][ assistant_command ] Ошибка выполнения команды {command}.  {err}')
                         await self._tts.say(
                             text='ошибка во время выполнения команды',
                             speaker=settings.speakers["ru"],

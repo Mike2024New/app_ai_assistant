@@ -20,7 +20,7 @@ def start():
     else:
         if Path(select).exists():
             os.startfile(select)
-    print('открываю папку')
+    print('открываю папку', flush=True)
 
 
 if __name__ == '__main__':

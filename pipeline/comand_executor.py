@@ -5,6 +5,8 @@ from config import commands, logger
 
 from infrastructure_path_utils import find_interpreter_by_root_dir, get_root_dir_path
 
+LOG_NAME = 'COMMAND_EXECUTOR'
+
 
 def executor(cmd_name: str, *args):
     """Блок исполняющий команды, предполагается что уже точно известно какая команда выполняется
@@ -46,14 +48,18 @@ def executor(cmd_name: str, *args):
     cmd.extend([str(file), *default_args])
 
     try:
+        logger.info(f'[ {LOG_NAME} ] Выполнение команды `{cmd}` с аргументами `{args}`')
         answer = subprocess.run(cmd, capture_output=True, timeout=timeout, encoding='utf-8')
     except subprocess.TimeoutExpired:
+        logger.debug(f'[ comand_executor ] Команда не выполнена, время ожидания превышено.')
         return 'Команда не выполнена, превышено время ожидания.'
+    # инфо о выполненной команде
+    logger.debug(f'[ {LOG_NAME} ] DEBUG: returncode={answer.returncode}')
+    logger.debug(f'[ {LOG_NAME} ] DEBUG: stdout={answer.stdout!r}')
+    logger.debug(f'[ {LOG_NAME} ] DEBUG: stderr={answer.stderr!r}')
     if answer.returncode != 0:
-        print(answer)
-        logger.error(f'[ comand_executor ] Ошибка при выплонении команды `{cmd_name}`: return_code!=0 {answer.stderr}')
         return 'Ошибка при выполнении команды.'  # сообщение для ассистента
-    res = answer.stdout.strip()
+    res = answer.stdout.strip() if answer.stdout else None
     return res or None  # вернуть ассистенту  ответ если есть
 
 

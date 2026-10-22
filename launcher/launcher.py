@@ -15,6 +15,8 @@ CREATE_NO_WINDOW = 0x08000000  # флаг Windows для скрытия конс
 И остановить все компоненты по команде ( /stop/ /shutdown/ )
 """
 
+LOG_NAME = 'LAUNCHER'
+
 
 class Launcher:
     def __init__(
@@ -28,7 +30,6 @@ class Launcher:
         self._lock = asyncio.Lock()
         self._pid_manager = PidManager(pid_file_path=get_root_dir_path() / 'pids.txt')
 
-    @logger.catch
     async def start(
             self, timeout_run_server: float = 180.0,
             log_level: Literal['debug', 'info', 'warning', 'error'] = 'info',
@@ -59,7 +60,6 @@ class Launcher:
         # ожидание запуска всех серверов (исключение выбрасывается осознанно - не запустился сервис - сломан весь пайплайн)
         await asyncio.gather(*tasks, return_exceptions=False)
 
-    @logger.catch
     async def stop(self, timeout_stop_server: float = 180.0):
         if not self._running:
             return
@@ -78,20 +78,19 @@ class Launcher:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for srv, result in zip(self.run_services.keys(), results):
             if isinstance(result, Exception):
-                logger.warning(f'⚠ Не удалось остановить сервис {srv}')
+                logger.warning(f'[ {LOG_NAME} ] ⚠ Не удалось остановить сервис {srv}')
                 self.queue.put_nowait(f'⚠ Не удалось остановить сервис {srv}')
 
         self._pid_manager.clear()  # всё завершилось корректно, очистить pid менеджер
         self._running = False
         self.queue.put_nowait(None)
 
-    @logger.catch
     async def _run_server(
             self, svc_path: Path, svc_name: str, svc_parameters: dict[str, Any],
             log_level: Literal['debug', 'info', 'warning', 'error'] = 'info',
             timeout_run_server: float = 180.0,
     ):
-        logger.info(f'Запуск компонента {svc_name}')
+        logger.info(f'[ {LOG_NAME} ] Запуск компонента {svc_name}')
         self.queue.put_nowait(
             {
                 'timestamp': time_utils.timestamp(),
@@ -113,7 +112,7 @@ class Launcher:
             interpreter_path = find_interpreter_by_root_dir(svc_path)
             if interpreter_path is None:
                 self.queue.put_nowait(f'Не найден интерпретатор сервиса `{svc_name}`')
-                logger.error(f'Не найден интерпретатор сервиса `{svc_name}`')
+                logger.error(f'[ {LOG_NAME} ] Не найден интерпретатор сервиса `{svc_name}`')
                 raise RuntimeError(f'Не найден интерпретатор сервиса `{svc_name}`')
             cmd = [interpreter_path, 'cli.py', 'run-server', '--port', str(port), '--log-level', log_level]
 
@@ -137,7 +136,7 @@ class Launcher:
                 )
             )
             if res.status_code != 200:
-                logger.error(f'Сервер {svc_name} не был запущен (status_code != 200)')
+                logger.error(f'[ {LOG_NAME} ] Сервер {svc_name} не был запущен (status_code != 200)')
                 raise RuntimeError(f'Сервер {svc_name} не был запущен (status_code != 200)')
         except Exception as err:
             self.queue.put_nowait({
@@ -145,7 +144,7 @@ class Launcher:
                 'type': 'error',
             })
             self.queue.put_nowait(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
-            logger.error(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
+            logger.error(f'[ {LOG_NAME} ] Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
             raise RuntimeError(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
 
         # получение pid сервера
@@ -156,7 +155,7 @@ class Launcher:
                 'type': 'error',
             })
             self.queue.put_nowait(f'Сервер `{svc_name}` не выдает pid')
-            logger.error(f'Сервер `{svc_name}` не выдает pid')
+            logger.error(f'[ {LOG_NAME} ] Сервер `{svc_name}` не выдает pid')
             raise RuntimeError(f'Сервер `{svc_name}` не выдает pid')
         res = res.json()
         pid = res.get('pid', None)  # noqa
@@ -166,7 +165,7 @@ class Launcher:
                 'type': 'error',
             })
             self.queue.put_nowait(f'Не получен pid для сервера {svc_name}')
-            logger.error(f'Не получен pid для сервера {svc_name}')
+            logger.error(f'[ {LOG_NAME} ] Не получен pid для сервера {svc_name}')
             raise RuntimeError(f'Не получен pid для сервера {svc_name}')
         self._pid_manager.add(pid)
         self.run_services[svc_name]['pid'] = pid
@@ -185,7 +184,7 @@ class Launcher:
                 'type': 'error',
             })
             self.queue.put_nowait(None)
-            logger.error(f'Engine сервера `{svc_name}` не был запущен')
+            logger.error(f'[ {LOG_NAME} ] Engine сервера `{svc_name}` не был запущен')
             raise RuntimeError(f'Engine сервера `{svc_name}` не был запущен')
 
         # уведомить приложение о запуске
@@ -194,10 +193,10 @@ class Launcher:
             'msg': f'Компонент {svc_name} запущен. Порт {port}, pid {pid}, url {f"http://localhost:{port}/docs/"}',
             'type': 'start',
         })
-        logger.info(f'Компонент {svc_name} запущен. Порт {port}, pid {pid}, url {f"http://localhost:{port}/docs/"}')
+        logger.info(
+            f'[ {LOG_NAME} ] Компонент {svc_name} запущен. Порт {port}, pid {pid}, url {f"http://localhost:{port}/docs/"}')
         return process
 
-    @logger.catch
     async def observer(self, callback):
         """Обсервер, наблюдает за запуском и остановкой сервисов, применяет callback"""
         while True:
@@ -210,14 +209,13 @@ class Launcher:
             except asyncio.TimeoutError:
                 pass
 
-    @logger.catch
     async def _stop_server(self, svc_name, port, timeout_stop_server: float = 180.0):
         self.queue.put_nowait({
             'timestamp': time_utils.timestamp(),
             'msg': f'Остановка компонента {svc_name}.',
             'type': 'stop',
         })
-        logger.info(f'Остановка компонента {svc_name}.')
+        logger.info(f'[ {LOG_NAME} ] Остановка компонента {svc_name}.')
         await asyncio.to_thread(lambda: requests.get(f'http://localhost:{port}/stop/'))  # остановить engine сервера
         await asyncio.to_thread(lambda: requests.get(f'http://localhost:{port}/shutdown/'))  # остановить сервер
         # проверка что сервер был остановлен
@@ -229,10 +227,10 @@ class Launcher:
                 )
             )
         except Exception as err:
-            logger.error(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
+            logger.error(f'[ {LOG_NAME} ] Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
             raise RuntimeError(f'Не удалось запустить сервер `{svc_name}`, ошибка: {err}')
 
-        logger.info(f'Компонент {svc_name} остановлен.')
+        logger.info(f'[ {LOG_NAME} ] Компонент {svc_name} остановлен.')
         self.queue.put_nowait(
             {
                 'timestamp': time_utils.timestamp(),
