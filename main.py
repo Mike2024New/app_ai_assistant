@@ -78,5 +78,5 @@ else:
     main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
 
     main_window.root.iconbitmap(get_root_dir_path() / 'icon.ico')
-    main_window.set_page('scripts_window')
+    main_window.set_page('ai_window')
     main_window.start()

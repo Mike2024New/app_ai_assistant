@@ -1,10 +1,10 @@
 {
   "theme": "dark",
   "app_name": "app",
-  "assistant_name_in_cmd": false,
-  "companion": false,
+  "assistant_name_in_cmd": true,
+  "companion": true,
   "assistant": true,
-  "assistant_speech": false,
+  "assistant_speech": true,
   "whisper_timeout_sec": 1.0,
   "assistant_name": "ассистент",
   "stt_numbers_filter": true,
