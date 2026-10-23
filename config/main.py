@@ -11,6 +11,7 @@ __all__ = [
     'settings', 'settings_manager',
     'time_utils', 'EXE_MODE', 'history_messages_json',
     'logger', 'request_id', 'commands',
+    'default_settings',
 ]
 
 create_scripts_folder()
@@ -37,7 +38,6 @@ settings_manager = get_settings_manager(
 try:
     with open(file=get_root_dir_path() / 'scripts.json', mode='r', encoding='utf-8') as f:
         commands = json.loads(f.read())
-        print(commands)
 except Exception:  # noqa
     commands = {}
 

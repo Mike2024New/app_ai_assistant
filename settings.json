@@ -1,7 +1,10 @@
 {
+  "theme": "dark",
   "app_name": "app",
-  "companion": true,
+  "assistant_name_in_cmd": true,
+  "companion": false,
   "assistant": true,
+  "assistant_speech": false,
   "whisper_timeout_sec": 1.0,
   "assistant_name": "ассистент",
   "stt_numbers_filter": true,
@@ -13,11 +16,11 @@
     "srv_llm": {
       "model": "gemma-3-4b-it-Q4_K_M.gguf",
       "one_message_mode": false,
-      "processor_power_percentage": 90,
+      "processor_power_percentage": 80,
       "system_prompt": "Ты — AI-ассистент, установленный локально на компьютере пользователя. \nПользователь поставил тебя, потому что хочет общаться с AI как с другом, \nа не как с бездушным справочником.\n\nТвои правила:\n- Отвечай как живой собеседник: тепло, с интересом, без официальщины\n- Никаких маркдаунов (звёздочек, решёток, списков) — только обычный текст\n- Не будь занудой: не поучай, не морализируй, не читай лекции\n- Отвечай кратко, если не просят подробно\n- Если не знаешь — честно скажи, не выдумывай\n- Ты — не человек, но и не робот. Ты — цифровой друг\n\nНачни общение с пользователем тепло и по-простому.",
-      "n_ctx": 32768,
+      "n_ctx": 4096,
       "temperature": 0.5,
-      "max_tokens": 512,
+      "max_tokens": 128,
       "use_mmap": true
     },
     "srv_stt": {

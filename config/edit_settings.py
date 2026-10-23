@@ -3,7 +3,8 @@ from typing import Literal
 from config import settings as config_settings
 from config import settings_manager
 from infrastructure_path_utils import get_root_dir_path
-from settings_editor.default_settings import default_settings
+from config import default_settings
+# from settings_editor.default_settings import default_settings
 from config.schemas import Settings
 
 settings = config_settings
@@ -36,6 +37,33 @@ class SettingsEditor:
     @staticmethod
     def assistant_set(val: bool):
         settings.assistant = val
+        settings_manager.apply_new_settings(settings=settings)
+
+    @staticmethod
+    def assistant_name_in_cmd_get():
+        return settings.assistant_name_in_cmd
+
+    @staticmethod
+    def assistant_name_in_cmd_set(val: bool):
+        settings.assistant_name_in_cmd = val
+        settings_manager.apply_new_settings(settings=settings)
+
+    @staticmethod
+    def assistant_name_get():
+        return settings.assistant_name
+
+    @staticmethod
+    def assistant_name_set(val: bool):
+        settings.assistant_name = val
+        settings_manager.apply_new_settings(settings=settings)
+
+    @staticmethod
+    def assistant_speech_get():
+        return settings.assistant_speech
+
+    @staticmethod
+    def assistant_speech_set(val: bool):
+        settings.assistant_speech = val
         settings_manager.apply_new_settings(settings=settings)
 
     # ========================== TTS ==========================

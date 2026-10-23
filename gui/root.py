@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from typing import Callable, Literal
 import tkinter as tk
+from config import settings, settings_manager
 
 
 class MainWindowUi:
@@ -34,6 +35,11 @@ class MainWindowUi:
         # подключение стилей
         if my_theme_path.exists():
             ctk.set_default_color_theme(str(my_theme_path))
+
+        # установка темы
+        current_theme = 'dark' if settings.theme == 'dark' else 'light'
+        ctk.set_appearance_mode(current_theme)
+
         self.root = ctk.CTk()
         self._body_frame: ctk.CTkFrame | None = None
 
@@ -206,9 +212,13 @@ class MainWindowUi:
         if current_apperance_mode == 'light':
             ctk.set_appearance_mode('dark')
             theme_btn.configure(text='◐')
+            settings.theme = 'dark'
+            settings_manager.apply_new_settings(settings=settings)
         elif current_apperance_mode == 'dark':
             ctk.set_appearance_mode('light')
             theme_btn.configure(text='◑')
+            settings.theme = 'light'
+            settings_manager.apply_new_settings(settings=settings)
 
 
 if __name__ == '__main__':

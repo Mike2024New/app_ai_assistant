@@ -6,6 +6,7 @@ python_embed/
 python/
 logs/
 app/
+logs.zip
 
 # тесты
 .pytest_cache/

@@ -28,6 +28,7 @@ class AIWindow:
         if role == 'user':
             row = f"\n{row}\n"
         tag = 'user' if role == 'user' else 'ai'
+        tag = 'cmd' if 'cmd' in row else tag
         self._text_area.after(0, lambda r=row: self._text_area.insert('end', f" {r}", tag))  # noqa
         self._text_area.after(0, lambda: self._text_area.see('end'))  # noqa
 
@@ -35,7 +36,8 @@ class AIWindow:
         """Запуск сервера, отрисовка прогресса в text_area"""
         if self._text_area is None:
             return
-        self._text_area.after(0, lambda r=res: self._text_area.insert('end', f"\n{r['msg']}", ))
+        tag = 'system'
+        self._text_area.after(0, lambda r=res: self._text_area.insert('end', f"\n{r['msg']}", tag))
         self._text_area.after(0, lambda: self._text_area.see('end'))  # noqa
 
     async def start(self):
@@ -103,6 +105,7 @@ class AIWindow:
         self.storage = _storage
         frame_left = ctk.CTkFrame(frame, fg_color='transparent', border_width=0)
         self._indicator_frame = ctk.CTkFrame(frame_left)
+
         self._indicator_frame.configure(
             fg_color='transparent', border_width=20, border_color='gray18', corner_radius=1000,
         )
@@ -118,9 +121,14 @@ class AIWindow:
         row_state.configure(text='нажмите start для запуска ассистента', text_color='green')
         frame_right = ctk.CTkFrame(frame)
         self._text_area = ctk.CTkTextbox(frame_right, width=550)
+        self._text_area.configure(font=('Consolas', 14, 'bold'))
         # добавить переключение в зависимости от темы, так как на светлой плохо видно белый текст
+        # self._text_area.tag_config('system', foreground="#D97706",font=('roboto', 14, 'bold'))
+        self._text_area.tag_config('system', foreground="#D97706")
+        # self._text_area.tag_config('system', foreground="#D97706", font=('Consolas', 14, 'bold'))
         self._text_area.tag_config('ai', foreground="#10B981")
-        self._text_area.tag_config('user', foreground="white")
+        self._text_area.tag_config('user', foreground="tomato")
+        self._text_area.tag_config('cmd', foreground="steelblue")
         # self._text_area.tag_config('tag', foreground="yellow")
         self._text_area.pack(expand=True, fill='both', padx=10, pady=10)
         frame_right.pack(expand=True, fill='both', side='right', padx=10, pady=10)

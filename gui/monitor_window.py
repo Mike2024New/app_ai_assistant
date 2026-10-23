@@ -4,8 +4,7 @@ import threading
 
 import customtkinter as ctk
 import psutil
-
-from settings_editor import SettingsEditor
+from config import SettingsEditor
 from metric import monitor
 
 
@@ -41,7 +40,17 @@ class MonitorWindow:
     def monitor(self):
         async def monitor_worker():
             while True:
-                services = self._storage['services']
+                if 'services' not in self._storage:
+                    # если сервисы ещё не были инциализированы, и их pid ещё не известны, то просто заглушки
+                    services = {
+                        'srv_llm': {'port': None, 'pid': None},
+                        'srv_stt': {'port': None, 'pid': None},
+                        'srv_tts': {'port': None, 'pid': None}
+                    }
+                else:
+                    # сервисы уже инициализированы, можно смотреть на pid
+                    services = self._storage['services']
+
                 text = f'{"":<10}  {"CPU %":>6}   {"RAM GB":>6}\n'
                 tasks = []
                 services_list = list(services.keys())
@@ -80,7 +89,6 @@ class MonitorWindow:
         asyncio.run(monitor_worker())
 
     def window(self, root: ctk.CTk, frame: ctk.CTkFrame, row_state: ctk.CTkLabel, storage: dict):
-
         self._root = root
         self._frame = frame
         self._row_state = row_state
@@ -97,17 +105,9 @@ class MonitorWindow:
         # блок для вывода информации о ресурсах ПК
         text_area = ctk.CTkTextbox(frame, width=550, fg_color='transparent')
         text_area.configure(font=('roboto', 14, 'normal'))
-        text_area.pack(expand=True, fill='both', padx=10, pady=10)
+        text_area.pack(expand=True, fill='both', padx=10, pady=(0, 5))
 
-        def callback():
-            if not 'services' in self._storage:
-                return
-            info = monitor()
-            text_area.delete('1.0', 'end')
-            text_area.insert('1.0', info)
-            threading.Thread(target=self.monitor, daemon=True).start()
-            btn.configure(state='disabled')
-
-        btn = ctk.CTkButton(frame, text='start', cursor='hand2')
-        btn.configure(command=lambda: callback())
-        btn.pack(expand=False, padx=10, pady=10, anchor='ne')
+        info = monitor()
+        text_area.delete('1.0', 'end')
+        text_area.insert('1.0', info)
+        threading.Thread(target=self.monitor, daemon=True).start()

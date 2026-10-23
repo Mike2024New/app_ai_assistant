@@ -15,12 +15,14 @@ def monitor():
     from metric.get_ram_info import get_ram_info
     from metric.get_current_disk_info import get_current_disk_info
     from metric.get_gpu_info import get_gpu_info
+    from metric.get_sys_info import get_windows_name_wmi
 
     result_text = ''
     result_text += func(func_info=get_cpu_info, title='CPU INFO:')
     result_text += func(func_info=get_ram_info, title='RAM INFO:')
     result_text += func(func_info=get_gpu_info, title='GPU INFO:')
     result_text += func(func_info=get_current_disk_info, title='DISK INFO:')
+    result_text += func(func_info=get_windows_name_wmi, title='SYSTEM NAME:')
     return result_text
 
 

@@ -48,19 +48,21 @@ def executor(cmd_name: str, *args):
     cmd.extend([str(file), *default_args])
 
     try:
-        logger.info(f'[ {LOG_NAME} ] Выполнение команды `{cmd}` с аргументами `{args}`')
-        answer = subprocess.run(cmd, capture_output=True, timeout=timeout, encoding='utf-8')
+        logger.info(f'[ {LOG_NAME} ] Выполнение команды `{cmd_name}` для скрипта `{file}`')
+        answer = subprocess.run(cmd, capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         logger.debug(f'[ comand_executor ] Команда не выполнена, время ожидания превышено.')
         return 'Команда не выполнена, превышено время ожидания.'
+
+    stdout_text = answer.stdout.decode('utf-8', errors='replace').strip() if answer.stdout else ''
+    stderr_text = answer.stderr.decode('utf-8', errors='replace').strip() if answer.stderr else ''
+
     # инфо о выполненной команде
     logger.debug(f'[ {LOG_NAME} ] DEBUG: returncode={answer.returncode}')
-    logger.debug(f'[ {LOG_NAME} ] DEBUG: stdout={answer.stdout!r}')
-    logger.debug(f'[ {LOG_NAME} ] DEBUG: stderr={answer.stderr!r}')
     if answer.returncode != 0:
         return 'Ошибка при выполнении команды.'  # сообщение для ассистента
-    res = answer.stdout.strip() if answer.stdout else None
-    return res or None  # вернуть ассистенту  ответ если есть
+    res = stderr_text or stdout_text or None
+    return res
 
 
 if __name__ == '__main__':

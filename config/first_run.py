@@ -13,15 +13,18 @@ args = sys.argv
 def start():
     select = args[1] if len(args) > 1 else None
     if select == 'desktop':
+        print(f'Открываю рабочий стол')
         desktop_path = Path.home() / 'Desktop'
         os.startfile(desktop_path)
     elif select == 'computer':
+        print(f'Открываю компьютер')
         os.system('explorer /select,"This PC"')
     else:
         if Path(select).exists():
             os.startfile(select)
-    print('открываю папку', flush=True)
-    sys.stdout.flush()
+            print('открываю папку')
+        else:
+            print(f'Указанный путь не найден')
 
 
 if __name__ == '__main__':
@@ -43,10 +46,10 @@ scripts_json = {
         ],
         "timeout": 10
     },
-    "открой загрузки": {
+    "открой папку": {
         "file": "scripts/demo.py",
         "args": [
-            "C:/Users/projects/Downloads"
+            "C:/Users"
         ],
         "timeout": 10
     }

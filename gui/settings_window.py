@@ -1,7 +1,13 @@
 import os
+import subprocess
+import threading
+
 from config import history_messages_json
 import customtkinter as ctk
-from settings_editor import SettingsEditor
+from config import logger
+from config import SettingsEditor
+from infrastructure_path_utils import get_root_dir_path
+from CTkToolTip import CTkToolTip
 
 
 class SettingsWindow:
@@ -30,6 +36,11 @@ class SettingsWindow:
         self._companion_swith: ctk.CTkSwitch | None = None
         self._assistant_swith: ctk.CTkSwitch | None = None
 
+        self._assist_name_cmd_swith: ctk.CTkSwitch | None = None
+        self._assistant_name: ctk.CTkEntry | None = None
+
+        self._assist_speech_swith: ctk.CTkSwitch | None = None
+
         self._padx, self._pady = 10, 10
 
     def apply_settings(self):
@@ -46,14 +57,14 @@ class SettingsWindow:
             self._settings.llm_set_processor_power_percentage(val=int(self._llm_processor_power_percentage.get()))
             # третья группа полей
             self._settings.stt_set_current_model(model=self._stt_model_combobox.get())
-
             self._settings.stt_set_numbers_filter(val=bool(self._stt_numbers_filter_swith.get()))
-
             self._settings.tts_set_current_speaker(speaker=self._tts_ru_combobox.get(), lang='ru')
             self._settings.tts_set_current_speaker(speaker=self._tts_en_combobox.get(), lang='en')
-
             self._settings.companion_set(val=bool(self._companion_swith.get()))
             self._settings.assistant_set(val=bool(self._assistant_swith.get()))
+            self._settings.assistant_name_in_cmd_set(val=bool(self._assist_name_cmd_swith.get()))
+            self._settings.assistant_name_set(self._assistant_name.get().strip())
+            self._settings.assistant_speech_set(val=bool(self._assist_speech_swith.get()))
 
             msg = 'Настройки сохранены и вступят в силу после перезагрузки ассистента'
             self._row_state.configure(text_color='green4', text=msg)
@@ -125,7 +136,7 @@ class SettingsWindow:
         self._llm_one_message_checkbox = ctk.CTkCheckBox(frame_center, text='Режим вопрос ответ')
         self._llm_one_message_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
 
-        self._llm_use_mmap_checkbox = ctk.CTkCheckBox(frame_center, text='Использовать RAM (use mmap)')
+        self._llm_use_mmap_checkbox = ctk.CTkCheckBox(frame_center, text='Экономия RAM (use_mmap)')
         self._llm_use_mmap_checkbox.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
 
         def clear_history():
@@ -137,21 +148,40 @@ class SettingsWindow:
         llm_clear_history_btn.configure(state='normal' if history_messages_json.exists() else 'disabled')
         llm_clear_history_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
 
+        def log_colapse_callback():
+            """сбор логов компонентов приложения, для отладки"""
+            from utils import log_colapse
+            from metric import monitor
+            self._row_state.configure(text='Идет сборка логов, подождите...', text_color='gold3')
+
+            def log_func():
+                try:
+                    r = monitor()
+                    logger.info(f'[ LOG_COLAPSE_INFO ] Информация о системе: {r}')
+                except Exception as err:
+                    logger.error(f'[ LOG_COLAPSE_INFO ] Не удалось собрать информацию о системе {err}')
+
+                log_path = log_colapse()
+                subprocess.Popen(['explorer', str(log_path.parent)])
+                self._row_state.after(
+                    0, lambda:
+                    self._row_state.configure(text='Сборка логов, завершена.', text_color='green')
+                )  # noqa
+
+            threading.Thread(target=log_func, daemon=True).start()
+
+        log_colapse_btn = ctk.CTkButton(
+            frame_center, text='Собрать логи', command=lambda: log_colapse_callback()
+        )
+        log_colapse_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
+
+        root_dir_btn = ctk.CTkButton(
+            frame_center, text='Папка приложения',
+            command=lambda: subprocess.Popen(['explorer', str(get_root_dir_path())])
+        )
+        root_dir_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
+
         # =========================== RIGHT_FRAME =============================================
-        # выбор stt модели
-        frame5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
-        frame5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
-        label = ctk.CTkLabel(frame5, text='stt модель: ')
-        label.pack(expand=False, side='left', fill='x')
-        self._stt_model_combobox = ctk.CTkComboBox(frame5, width=200)
-        self._stt_model_combobox.pack(expand=False, fill='x', side='right')
-
-        frame5_5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
-        frame5_5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
-        self._stt_numbers_filter_swith = ctk.CTkSwitch(frame5_5, text='Числа текстом (если подключен whisper)')
-        self._stt_numbers_filter_swith.set(True)
-        self._stt_numbers_filter_swith.pack(expand=False, fill='x', side='right')
-
         # выбор tts модели и голоса
         # настройки для ru озвучки
         frame6 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
@@ -160,6 +190,12 @@ class SettingsWindow:
         label.pack(expand=False, side='left', fill='x')
         self._tts_ru_combobox = ctk.CTkComboBox(frame6, width=200)
         self._tts_ru_combobox.pack(expand=False, fill='x', side='right')
+        CTkToolTip(
+            self._tts_ru_combobox,
+            message='Голос, которым ассистент будет разговаривать на русском языке',
+            delay=0.5, wraplength=250,
+        )
+
         # настройки для en озвучки
         frame7 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
         frame7.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
@@ -167,18 +203,99 @@ class SettingsWindow:
         label.pack(expand=False, side='left', fill='x')
         self._tts_en_combobox = ctk.CTkComboBox(frame7, width=200)
         self._tts_en_combobox.pack(expand=False, fill='x', side='right')
+        CTkToolTip(
+            self._tts_en_combobox,
+            message='Голос, которым ассистент будет разговаривать на английском языке',
+            delay=0.5, wraplength=250,
+        )
+
+        # выбор stt модели
+        frame5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        label = ctk.CTkLabel(frame5, text='stt модель: ')
+        label.pack(expand=False, side='left', fill='x')
+        self._stt_model_combobox = ctk.CTkComboBox(frame5, width=200)
+        self._stt_model_combobox.pack(expand=False, fill='x', side='right')
+        CTkToolTip(
+            self._stt_model_combobox,
+            message="Модель распознавания речи (Whisper). Vosk используется всегда по умолчанию для быстрого старта.\n- small: Быстрая, подходит для слабых ПК или без видеокарты, но менее точная.\n- medium: Хорошая точность, рекомендуется при наличии видеокарты (лучше с CUDA).\n- large: Максимальная точность, но требует много ресурсов.\n\nСовет: Если у вас видеокарта NVIDIA, установите драйвер CUDA для ускорения работы.",
+            delay=0.5, wraplength=250,
+        )
+
+        frame5_5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame5_5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._stt_numbers_filter_swith = ctk.CTkSwitch(frame5_5, text='Числа текстом (whisper)')
+        self._stt_numbers_filter_swith.set(True)
+        self._stt_numbers_filter_swith.pack(expand=False, fill='x', side='left')
+        CTkToolTip(
+            self._stt_numbers_filter_swith,
+            message="Если включено, все числа будут проговариваться словами (например, 'три', а не '3'). Особенно полезно при использовании модели Whisper, так как она может путать цифры.",
+            delay=0.5, wraplength=250,
+        )
 
         frame8 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
         frame8.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
         self._companion_swith = ctk.CTkSwitch(frame8, text='Компаньон вкл')
         self._companion_swith.set(True)
-        self._companion_swith.pack(expand=False, fill='x')
+        self._companion_swith.pack(expand=False, fill='x', side='left')
+        CTkToolTip(
+            self._companion_swith,
+            message='Включает режим простого общения с ИИ (диалоги как с человеком). '
+                    'Ассистент будет помнить контекст беседы (сохранять краткое резюме) для следующего раза.',
+            delay=0.5, wraplength=250,
+        )
+
+        # имя ассистента
+        frame8_5 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame8_5.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        ctk.CTkLabel(
+            frame8_5, text='имя ассистента: ', fg_color='transparent'
+        ).pack(expand=False, side='left', fill='x')
+        self._assistant_name = ctk.CTkEntry(frame8_5, width=150)
+        self._assistant_name.pack(expand=False, fill='x', side='right')
+        CTkToolTip(
+            self._assistant_name,
+            message="Имя, на которое реагирует ассистент. "
+                    "Если ввести 'Шарик', то команду нужно будет начинать говорить с него, например: "
+                    "'Шарик, открой рабочий стол'.",
+            delay=0.5, wraplength=250,
+        )
 
         frame9 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
         frame9.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
         self._assistant_swith = ctk.CTkSwitch(frame9, text='Ассистент вкл')
         self._assistant_swith.set(True)
         self._assistant_swith.pack(expand=False, fill='x')
+        CTkToolTip(
+            self._assistant_swith,
+            message="Разрешает ассистенту выполнять ваши скрипты (например, открывать папки или программы). "
+                    "Команды настраиваются во вкладке 'Управление скриптами'.",
+            delay=0.5, wraplength=250,
+        )
+
+        frame10 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame10.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._assist_name_cmd_swith = ctk.CTkSwitch(frame10, text='Имя ассистента в cmd')
+        self._assist_name_cmd_swith.set(True)
+        self._assist_name_cmd_swith.pack(expand=False, fill='x')
+        CTkToolTip(
+            self._assist_name_cmd_swith,
+            message="Если включено, команды должны начинаться с имени ассистента (например: 'Ассистент, открой папку'). "
+                    "Если выключено — достаточно просто сказать 'Открой папку'. (Работает только если выключен 'Компаньон').",
+            delay=0.5, wraplength=250
+        )
+
+        frame11 = ctk.CTkFrame(frame_right, fg_color='transparent', border_width=0)
+        frame11.pack(expand=False, fill='x', padx=self._padx, pady=self._pady)
+        self._assist_speech_swith = ctk.CTkSwitch(frame11, text='Ассистент голос')
+        self._assist_speech_swith.set(True)
+        self._assist_speech_swith.pack(expand=False, fill='x')
+        CTkToolTip(
+            self._assist_speech_swith,
+            message="Если включено, ассистент будет голосом подтверждать выполнение ваших команд (например, скажет 'Открываю папку')."
+                    "А также озвучивать результаты полученные из функций (если они есть).",
+            delay=0.5, wraplength=250
+        )
 
         # кнопки нижней панели (применить)
         default_btn = ctk.CTkButton(frame, text='по умолчанию', cursor='hand2', command=lambda: self.reset())
@@ -216,15 +333,16 @@ class SettingsWindow:
         # выбор голоса для английской озвучки
         self._tts_en_combobox.set(self._settings.tts_get_current_speaker(lang='en'))
         self._tts_en_combobox.configure(values=self._settings.tts_get_speakers_list(lang='en'))
-
         # фильтр числа текстом для whisper
         self._stt_numbers_filter_swith.set(self._settings.stt_get_numbers_filter())
-
         # галочки включения / выключения компаньона и ассистента
         self._companion_swith.set(self._settings.companion_get())
         self._assistant_swith.set(self._settings.assistant_get())
+        # галочка содержания названия ассистента в команде
+        self._assist_name_cmd_swith.set(self._settings.assistant_name_in_cmd_get())
+        self._assistant_name.set(self._settings.assistant_name_get())
+        self._assist_speech_swith.set(self._settings.assistant_speech_get())
 
     def reset(self):
         self._settings.reset_settings()
-        print(self._settings.stt_get_current_model())
         self.set_settings()

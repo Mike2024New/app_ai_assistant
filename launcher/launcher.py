@@ -59,6 +59,7 @@ class Launcher:
 
         # ожидание запуска всех серверов (исключение выбрасывается осознанно - не запустился сервис - сломан весь пайплайн)
         await asyncio.gather(*tasks, return_exceptions=False)
+        logger.info(f"[ {LOG_NAME} ] Сервисы успешно загружены")
 
     async def stop(self, timeout_stop_server: float = 180.0):
         if not self._running:
@@ -186,6 +187,7 @@ class Launcher:
             self.queue.put_nowait(None)
             logger.error(f'[ {LOG_NAME} ] Engine сервера `{svc_name}` не был запущен')
             raise RuntimeError(f'Engine сервера `{svc_name}` не был запущен')
+            # await self.stop()  # ошибка, остановить сервисы
 
         # уведомить приложение о запуске
         self.queue.put_nowait({

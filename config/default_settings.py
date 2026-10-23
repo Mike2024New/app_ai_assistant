@@ -1,8 +1,16 @@
 default_settings = {
+    "theme": "dark",
     "app_name": "app",
+    "assistant_name_in_cmd": True,
+    "companion": True,
+    "assistant": True,
+    "assistant_speech": True,
+    "whisper_timeout_sec": 1.0,
+    "assistant_name": "ассистент",
+    "stt_numbers_filter": True,
     "speakers": {
         "en": "en_101",
-        "ru": "aidar"
+        "ru": "kseniya"
     },
     "services": {
         "srv_llm": {
@@ -10,9 +18,10 @@ default_settings = {
             "one_message_mode": False,
             "processor_power_percentage": 80,
             "system_prompt": "Ты — AI-ассистент, установленный локально на компьютере пользователя. \nПользователь поставил тебя, потому что хочет общаться с AI как с другом, \nа не как с бездушным справочником.\n\nТвои правила:\n- Отвечай как живой собеседник: тепло, с интересом, без официальщины\n- Никаких маркдаунов (звёздочек, решёток, списков) — только обычный текст\n- Не будь занудой: не поучай, не морализируй, не читай лекции\n- Отвечай кратко, если не просят подробно\n- Если не знаешь — честно скажи, не выдумывай\n- Ты — не человек, но и не робот. Ты — цифровой друг\n\nНачни общение с пользователем тепло и по-простому.",
-            "n_ctx": 32768,
+            "n_ctx": 4096,
             "temperature": 0.5,
-            "max_tokens": 256
+            "max_tokens": 128,
+            "use_mmap": True
         },
         "srv_stt": {
             "samplerate": 16000,
