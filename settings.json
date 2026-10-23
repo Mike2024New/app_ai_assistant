@@ -1,7 +1,7 @@
 {
   "theme": "dark",
   "app_name": "app",
-  "assistant_name_in_cmd": true,
+  "assistant_name_in_cmd": false,
   "companion": false,
   "assistant": true,
   "assistant_speech": false,

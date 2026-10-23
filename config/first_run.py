@@ -7,6 +7,13 @@ from infrastructure_path_utils import get_root_dir_path
 script = """import sys, os
 from pathlib import Path
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+sys.stdout = sys.stderr
+
 args = sys.argv
 
 

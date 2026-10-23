@@ -155,17 +155,16 @@ class ScriptsWindow:
                             text_color='red4',
                         )
                         return
-                    if not Path(val).exists():
-                        self._row_state.configure(
-                            text=f'Строка {command_number} - путь не существует.',
-                            text_color='red4',
-                        )
-                        return
                 if key == 'timeout':
                     val = float(val)
                 if key == 'args':  # парсинг строки аргументов
-                    search = re.findall(pattern=r'"([^"]+)"', string=val)
-                    val = search if search else [val]
+                    val = val.strip()
+                    if not val or val == '""':
+                        val = []
+                    else:
+                        search = re.findall(pattern=r'"([^"]*)"', string=val)  # * вместо +
+                        # отфильтровать пустые строки, если они вдруг появились
+                        val = [s for s in search if s] if search else [val]
                 command[key] = val
             new_commands[command_name] = command
 
