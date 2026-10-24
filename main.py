@@ -51,7 +51,7 @@ else:
     monitor_window = MonitorWindow()
     scripts_window = ScriptsWindow()
     addition_window = AdditionallyWindow(event=event, feedback_dict=feedback_dict)
-    addition_window.start() # продолжение загрузок если были
+    addition_window.start()  # продолжение загрузок если были
 
     # инициализация root
     main_window = MainWindowUi(
@@ -75,7 +75,7 @@ else:
         def stop_worker():
             try:
                 asyncio.run(ai_window.stop())  # метод идемпотентен (флаг is_running)
-                addition_window.finish() # сохранить не докачанные загрузки
+                addition_window.finish()  # сохранить не докачанные загрузки
                 event.set()  # сброс event для окон с обсервацией
             except Exception as err:
                 logger.error(f'Ошибка при остановке потока {err}')
@@ -88,7 +88,7 @@ else:
     main_window.root.protocol("WM_DELETE_WINDOW", lambda: root_protocol())
 
     main_window.root.iconbitmap(get_root_dir_path() / 'icon.ico')
-    main_window.set_page('addition_window')
+    main_window.set_page('ai_window')
     main_window.start()
     # погасить все дочерние циклы
     event.set()

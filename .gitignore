@@ -7,7 +7,7 @@ python/
 logs/
 app/
 logs.zip
-
+additionally.json
 # тесты
 .pytest_cache/
 

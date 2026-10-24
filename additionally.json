@@ -1,22 +1,102 @@
 {
   "additionally": [
     {
-      "srv": "srv_llm",
       "label": "gemma-3-1b-it-Q4_K_M.gguf",
       "relative_path_file": "srv_llm/resources/models/gemma-3-1b-it-Q4_K_M.gguf",
       "url": "https://huggingface.co/lmstudio-community/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
       "source": "https://huggingface.co/lmstudio-community/gemma-3-1b-it-GGUF",
       "description": "llm мозг ассистента, если у вас слабый ПК, попробуйте эту модель.",
-      "continue": false
+      "continue": false,
+      "added": []
     },
     {
-      "srv": "srv_llm",
       "label": "gemma-4-26B-A4B-it-Q4_K_M.gguf",
       "relative_path_file": "srv_llm/resources/models/gemma-4-26B-A4B-it-Q4_K_M.gguf",
       "url": "https://huggingface.co/lmstudio-community/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-Q4_K_M.gguf",
-      "source": "https://huggingface.co/lmstudio-community/gemma-4-26B-A4B-it-Q4_K_M.gguf",
-      "description": "llm  ~ 16 GB.",
-      "continue": false
+      "source": "https://huggingface.co/lmstudio-community/gemma-4-26B-A4B-it-GGUF",
+      "description": "Мозг ассистента (максимальная версия). Гораздо умнее и лучше понимает сложные вопросы, но требует много оперативной памяти и мощный процессор. ~ 16 ГБ.",
+      "continue": false,
+      "added": []
+    },
+    {
+      "label": "faster-whisper-tiny/model.bin",
+      "relative_path_file": "srv_stt/resources/models/tiny/model.bin",
+      "url": "https://huggingface.co/Systran/faster-whisper-tiny/resolve/main/model.bin",
+      "source": "https://huggingface.co/Systran/faster-whisper-tiny",
+      "description": "Модуль распознания речи, сверхлегкий но, менее точный ~ 70 MB.",
+      "continue": false,
+      "added": [
+        {
+          "label": "faster-whisper-tiny/config.json",
+          "relative_path_file": "srv_stt/resources/models/tiny/config.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-tiny/resolve/main/config.json"
+        },
+        {
+          "label": "faster-whisper-tiny/tokenizer.json",
+          "relative_path_file": "srv_stt/resources/models/tiny/tokenizer.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-tiny/resolve/main/tokenizer.json"
+        },
+        {
+          "label": "faster-whisper-tiny/vocabulary.txt",
+          "relative_path_file": "srv_stt/resources/models/tiny/vocabulary.txt",
+          "url": "https://huggingface.co/Systran/faster-whisper-tiny/resolve/main/vocabulary.txt"
+        }
+      ]
+    },
+    {
+      "label": "faster-whisper-medium/model.bin",
+      "relative_path_file": "srv_stt/resources/models/medium/model.bin",
+      "url": "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/model.bin",
+      "source": "https://huggingface.co/Systran/faster-whisper-medium",
+      "description": "Модуль распознания речи, для компьютеров с видеокартами и драйверами cuda ~ 3 GB.",
+      "continue": false,
+      "added": [
+        {
+          "label": "faster-whisper-medium/config.json",
+          "relative_path_file": "srv_stt/resources/models/medium/config.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/config.json"
+        },
+        {
+          "label": "faster-whisper-medium/tokenizer.json",
+          "relative_path_file": "srv_stt/resources/models/medium/tokenizer.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/tokenizer.json"
+        },
+        {
+          "label": "faster-whisper-medium/vocabulary.txt",
+          "relative_path_file": "srv_stt/resources/models/medium/vocabulary.txt",
+          "url": "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/vocabulary.txt"
+        }
+      ]
+    },
+    {
+      "label": "faster-whisper-large-v3/model.bin",
+      "relative_path_file": "srv_stt/resources/models/large-v3/model.bin",
+      "url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/model.bin",
+      "source": "https://huggingface.co/Systran/faster-whisper-large-v3",
+      "description": "Модуль распознания речи, для компьютеров с видеокартами и драйверами cuda ~ 3 GB.",
+      "continue": false,
+      "added": [
+        {
+          "label": "faster-whisper-large-v3/config.json",
+          "relative_path_file": "srv_stt/resources/models/large-v3/config.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/config.json"
+        },
+        {
+          "label": "faster-whisper-large-v3/tokenizer.json",
+          "relative_path_file": "srv_stt/resources/models/large-v3/tokenizer.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/tokenizer.json"
+        },
+        {
+          "label": "faster-whisper-large-v3/vocabulary.json",
+          "relative_path_file": "srv_stt/resources/models/large-v3/vocabulary.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/vocabulary.json"
+        },
+        {
+          "label": "faster-whisper-large-v3/preprocessor_config.json",
+          "relative_path_file": "srv_stt/resources/models/large-v3/preprocessor_config.json",
+          "url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/preprocessor_config.json"
+        }
+      ]
     }
   ]
 }
