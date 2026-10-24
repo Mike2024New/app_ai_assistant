@@ -147,19 +147,28 @@ class SettingsWindow:
         llm_clear_history_btn = ctk.CTkButton(frame_center, text='Сбросить summary', command=lambda: clear_history())
         llm_clear_history_btn.configure(state='normal' if history_messages_json.exists() else 'disabled')
         llm_clear_history_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
+        log_colapse_btn = ctk.CTkButton(
+            frame_center, text='Собрать логи', command=lambda: log_colapse_callback()
+        )
 
         def log_colapse_callback():
             """сбор логов компонентов приложения, для отладки"""
             from utils import log_colapse
             from metric import monitor
+            import pythoncom
             self._row_state.configure(text='Идет сборка логов, подождите...', text_color='gold3')
 
             def log_func():
                 try:
+                    log_colapse_btn.configure(state='disabled')
+                    pythoncom.CoInitialize()
                     r = monitor()
                     logger.info(f'[ LOG_COLAPSE_INFO ] Информация о системе: {r}')
                 except Exception as err:
                     logger.error(f'[ LOG_COLAPSE_INFO ] Не удалось собрать информацию о системе {err}')
+                finally:
+                    pythoncom.CoUninitialize()
+                    log_colapse_btn.configure(state='normal')
 
                 log_path = log_colapse()
                 subprocess.Popen(['explorer', str(log_path.parent)])
@@ -170,9 +179,6 @@ class SettingsWindow:
 
             threading.Thread(target=log_func, daemon=True).start()
 
-        log_colapse_btn = ctk.CTkButton(
-            frame_center, text='Собрать логи', command=lambda: log_colapse_callback()
-        )
         log_colapse_btn.pack(expand=False, fill='both', padx=self._padx, pady=self._pady)
 
         root_dir_btn = ctk.CTkButton(

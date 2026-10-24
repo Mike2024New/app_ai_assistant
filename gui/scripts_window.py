@@ -70,7 +70,7 @@ class ScriptsWindow:
         row['file'] = lambda fe=file_entry: fe.get()
         btn = ctk.CTkButton(frame_in, text='select', cursor='hand2', width=10)
         btn.configure(command=lambda e=file_entry: self.select_file(e))
-        btn.pack(expand=False, side='left', padx=(0, 5), pady=10)
+        btn.pack(expand=False, side='left', padx=(5, 5), pady=10)
         # поле с таймаутом
         ctk.CTkLabel(frame_in, text=f'timeout:', text_color='gray').pack(expand=False, side='left', padx=5, pady=10)
         timeout_entry = ctk.CTkEntry(frame_in, width=50)

@@ -87,6 +87,8 @@ class MainWindowUi:
         """Перехват ошибок элементов -> ошибки tcl (необходимая мера, в частности из-за проблемы уничтожения скроллбаров)"""
         # пока принт, потом можно реализовать логирование
         print(f"⚠ tkinter_error: {exc}\t{val}\t{tb}")
+        # from config import logger
+        # logger.exception(exc)
 
     def _body_frame_draw(self):
         """Очищает только внутренности, не трогая сам базовый фрейм"""

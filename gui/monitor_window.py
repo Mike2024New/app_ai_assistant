@@ -17,6 +17,7 @@ class MonitorWindow:
         self._row_state: ctk.CTkLabel | None = None
         self._storage: dict | None = None
         self._text_area_monitor: ctk.CTkTextbox | None = None
+        self._text_area_hardware: ctk.CTkTextbox | None = None
         self._padx, self._pady = 10, 10
 
     @staticmethod
@@ -38,6 +39,11 @@ class MonitorWindow:
             }
 
     def monitor(self):
+
+        info = monitor()
+        self._text_area_hardware.delete('1.0', 'end')
+        self._text_area_hardware.insert('1.0', info)
+
         async def monitor_worker():
             while True:
                 if 'services' not in self._storage:
@@ -99,15 +105,16 @@ class MonitorWindow:
 
         # блок текущий монитор
         self._text_area_monitor = ctk.CTkTextbox(frame, width=550, height=120, fg_color='transparent')
-        self._text_area_monitor.configure(font=('Consolas', 16, 'normal'), spacing1=1, spacing3=1)
+        self._text_area_monitor.configure(font=('Consolas', 16, 'bold'), spacing1=1, spacing3=1)
         self._text_area_monitor.pack(expand=True, fill='both', padx=10, pady=5)
+        self._text_area_monitor.configure(text_color="#D97706")
+        self._text_area_monitor.insert('1.0', 'Загрузка информации...')
 
         # блок для вывода информации о ресурсах ПК
-        text_area = ctk.CTkTextbox(frame, width=550, fg_color='transparent')
-        text_area.configure(font=('roboto', 14, 'normal'))
-        text_area.pack(expand=True, fill='both', padx=10, pady=(0, 5))
+        self._text_area_hardware = ctk.CTkTextbox(frame, width=550, fg_color='transparent')
+        self._text_area_hardware.configure(font=('Consolas', 16, 'bold'))
+        self._text_area_hardware.pack(expand=True, fill='both', padx=10, pady=(0, 5))
+        self._text_area_hardware.configure(text_color="steelblue")
+        self._text_area_hardware.insert('1.0', 'Загрузка информации...')
 
-        info = monitor()
-        text_area.delete('1.0', 'end')
-        text_area.insert('1.0', info)
         threading.Thread(target=self.monitor, daemon=True).start()

@@ -1,0 +1,22 @@
+{
+  "additionally": [
+    {
+      "srv": "srv_llm",
+      "label": "gemma-3-1b-it-Q4_K_M.gguf",
+      "relative_path_file": "srv_llm/resources/models/gemma-3-1b-it-Q4_K_M.gguf",
+      "url": "https://huggingface.co/lmstudio-community/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
+      "source": "https://huggingface.co/lmstudio-community/gemma-3-1b-it-GGUF",
+      "description": "llm мозг ассистента, если у вас слабый ПК, попробуйте эту модель.",
+      "continue": false
+    },
+    {
+      "srv": "srv_llm",
+      "label": "gemma-4-26B-A4B-it-Q4_K_M.gguf",
+      "relative_path_file": "srv_llm/resources/models/gemma-4-26B-A4B-it-Q4_K_M.gguf",
+      "url": "https://huggingface.co/lmstudio-community/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-Q4_K_M.gguf",
+      "source": "https://huggingface.co/lmstudio-community/gemma-4-26B-A4B-it-Q4_K_M.gguf",
+      "description": "llm  ~ 16 GB.",
+      "continue": false
+    }
+  ]
+}
