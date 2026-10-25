@@ -58,8 +58,12 @@ class SettingsWindow:
             # третья группа полей
             self._settings.stt_set_current_model(model=self._stt_model_combobox.get())
             self._settings.stt_set_numbers_filter(val=bool(self._stt_numbers_filter_swith.get()))
+
+
             self._settings.tts_set_current_speaker(speaker=self._tts_ru_combobox.get(), lang='ru')
             self._settings.tts_set_current_speaker(speaker=self._tts_en_combobox.get(), lang='en')
+
+
             self._settings.companion_set(val=bool(self._companion_swith.get()))
             self._settings.assistant_set(val=bool(self._assistant_swith.get()))
             self._settings.assistant_name_in_cmd_set(val=bool(self._assist_name_cmd_swith.get()))

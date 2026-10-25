@@ -39,20 +39,34 @@ class Pipeline:
         self._stop_assistant_wait: bool = False
 
     async def observer_callback(self):
-        self._llm.interrupt()
+        if self._llm is not None:
+            self._llm.interrupt()
         if self._llm_task is not None and not self._llm_task.done():
             # проверить это место, ибо во время резюме зависает !!!
             self._llm_task.cancel()
             await asyncio.gather(self._llm_task, return_exceptions=True)  # придавить задачу
-        await self._tts.interrupt()
+        if self._tts is not None:
+            await self._tts.interrupt()
 
     async def start(self, services: dict[str, dict[str, int]]):
         if self._running:
             return
         self._running = True
-        self._stt = STTClient(port=services['srv_stt']['port'], event=self._event)
-        self._tts = TTSClient(port=services['srv_tts']['port'])
-        self._llm = LLMClient(port=services['srv_llm']['port'], event=self._event)
+        try:
+            self._stt = STTClient(port=services['srv_stt']['port'], event=self._event)
+        except Exception as err:
+            logger.error(f'Не удалось запустить pipeline srv_stt : {err}')
+        try:
+            self._tts = TTSClient(port=services['srv_tts']['port'])
+        except Exception as err:
+            logger.error(f'Не удалось запустить pipeline srv_tts : {err}')
+        try:
+            self._llm = LLMClient(port=services['srv_llm']['port'], event=self._event)
+        except Exception as err:
+            logger.error(f'Не удалось запустить pipeline srv_llm : {err}')
+        # except Exception as err:
+        #     logger.error(f'[ {LOG_NAME} ] Ошибка запуска пайплайна: {err}')
+        #     self.queue.put_nowait(None)
 
         # загрузка истории сообщений (продолжение диалога с llm - примитивная долговременная память)
         if settings.companion and not settings.services['srv_llm'][
@@ -81,7 +95,8 @@ class Pipeline:
 
     async def stop(self):
         self._stop_assistant_wait = True
-        await self._tts.interrupt()  # остановить tts если он ещё говорит
+        if self._tts is not None:
+            await self._tts.interrupt()  # остановить tts если он ещё говорит
         if not self._running:
             return
 
@@ -134,13 +149,7 @@ class Pipeline:
                 is_command = True
 
             if is_command:
-                print(settings.assistant_speech)
-                self.queue.put_nowait({
-                    'role': 'user', 'text': f'cmd: {text}'.strip(), 'timestamp': time_utils.timestamp(),
-                    'type': 'process',
-                })
-
-                if command not in commands:
+                if self._llm is not None and command not in commands:
                     commands_list = [f'{i}.`{c}`' for i, c in enumerate(list(commands.keys()))]
                     prompt = (
                         f"Ты — модуль распознавания команд. Твоя задача — сопоставить фразу пользователя со списком команд.\n"
@@ -155,6 +164,7 @@ class Pipeline:
                     logger.debug(
                         f'[ {LOG_NAME} ][ ai_analysis ] на запрос `{command}` ассистент распознал `{res}` из `{commands_list}`'
                     )
+                    res = res if res is not None else '-1'
                     if '-1' in res:
                         self.queue.put_nowait({
                             'role': 'ai', 'text': 'не удалось распознать команду',
@@ -181,32 +191,38 @@ class Pipeline:
                                 add=True
                             )
                             return
-                try:
-                    res = executor(command)
-                    if res is not None:
-                        res = res.strip()
+
+                if command in commands:
                     self.queue.put_nowait({
-                        'role': 'ai', 'text': res, 'timestamp': time_utils.timestamp(),
+                        'role': 'user', 'text': f'cmd: {text}'.strip(), 'timestamp': time_utils.timestamp(),
                         'type': 'process',
                     })
-                    logger.info(f'[ {LOG_NAME} ][ assistant_command ] выполнение команды `{command}`')
-                    if res:
+                    try:
+                        res = executor(command)
+                        if res is not None:
+                            res = res.strip()
+                        self.queue.put_nowait({
+                            'role': 'ai', 'text': res, 'timestamp': time_utils.timestamp(),
+                            'type': 'process',
+                        })
+                        logger.info(f'[ {LOG_NAME} ][ assistant_command ] выполнение команды `{command}`')
+                        if res:
+                            if settings.assistant_speech:
+                                await self._tts.say(
+                                    text=res,
+                                    speaker=settings.speakers["ru"],
+                                    add=True
+                                )
+                    except Exception as err:
+                        logger.exception(
+                            f'[ {LOG_NAME} ][ assistant_command ] Ошибка выполнения команды {command}.  {err}')
                         if settings.assistant_speech:
                             await self._tts.say(
-                                text=res,
+                                text='ошибка во время выполнения команды',
                                 speaker=settings.speakers["ru"],
                                 add=True
                             )
-                except Exception as err:
-                    logger.exception(
-                        f'[ {LOG_NAME} ][ assistant_command ] Ошибка выполнения команды {command}.  {err}')
-                    if settings.assistant_speech:
-                        await self._tts.say(
-                            text='ошибка во время выполнения команды',
-                            speaker=settings.speakers["ru"],
-                            add=True
-                        )
-                return
+                    return
 
         self.queue.put_nowait({
             'role': 'user', 'text': text.strip(), 'timestamp': time_utils.timestamp(), 'type': 'process',

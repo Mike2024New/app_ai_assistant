@@ -3,6 +3,7 @@ import os, asyncio, threading
 import customtkinter as ctk
 from launcher import Launcher
 from pipeline import Pipeline
+from config import logger
 
 
 class AIWindow:
@@ -36,7 +37,13 @@ class AIWindow:
         """Запуск сервера, отрисовка прогресса в text_area"""
         if self._text_area is None:
             return
+
         tag = 'system'
+        if res.get(type) == 'error':
+            # self._pipeline = None
+            # self._launcher = None
+            self.button.configure(state='normal')
+
         self._text_area.after(0, lambda r=res: self._text_area.insert('end', f"\n{r['msg']}", tag))
         self._text_area.after(0, lambda: self._text_area.see('end'))  # noqa
 
@@ -52,8 +59,15 @@ class AIWindow:
         self.row_state.after(0, self.row_state.configure(text_color='gold2', text='запуск сервисов, подождите...'))
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='gold2'))  # noqa
         observer_launcher_task = asyncio.create_task(self._launcher.observer(self.launcher_callback))
-        await self._launcher.start()
-        await self._pipeline.start(services=self._launcher.run_services)
+
+        try:
+            await self._launcher.start()
+            await self._pipeline.start(services=self._launcher.run_services)
+        except Exception as err:
+            logger.error(f'Не удалось запустить ai: {err}')
+            await self.stop()
+            return
+
         observer_pipeline_task = asyncio.create_task(self._pipeline.observer(self.pipeline_callback))
         self._indicator_frame.after(0, lambda: self._indicator_frame.configure(border_color='steelblue'))  # noqa
         self.row_state.after(0, self.row_state.configure(text_color='green', text='AI ассистент запущен'))

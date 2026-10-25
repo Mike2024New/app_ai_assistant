@@ -6,6 +6,7 @@ from infrastructure_path_utils import get_root_dir_path
 from config import default_settings
 # from settings_editor.default_settings import default_settings
 from config.schemas import Settings
+from config import logger
 
 settings = config_settings
 
@@ -72,7 +73,10 @@ class SettingsEditor:
         """Получение списка голосов для текущей модели (которая прописана в настройках settings.json)"""
         models_info_path = get_root_dir_path().parent / 'srv_tts' / 'resources' / 'models' / 'models_info.json'
         if not models_info_path.exists():
-            raise RuntimeError(f'Файл с конфигурацией спикеров не найден в srv_tts')
+            logger.warning(
+                f'[ settings_editor ] Файл с конфигурацией моделей не найден (возможно ещё не было запуска движков)'
+            )
+            return []
         try:
             with open(file=models_info_path, mode='r', encoding='utf-8') as f:
                 data = json.loads(f.read())
@@ -92,7 +96,8 @@ class SettingsEditor:
     def tts_set_current_speaker(cls, lang: Literal['ru', 'en'], speaker: str):
         """Установить спикера (en/ru)"""
         speakers = cls.tts_get_speakers_list(lang=lang)
-        if speaker not in speakers:
+        models_info_path = get_root_dir_path().parent / 'srv_tts' / 'resources' / 'models' / 'models_info.json'
+        if models_info_path.exists() and speaker not in speakers:
             raise ValueError(f'Голос `{speaker}` отсутствует в списке {speakers}')
         settings.speakers[lang] = speaker
         settings_manager.apply_new_settings(settings=settings)

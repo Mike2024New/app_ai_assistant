@@ -58,8 +58,16 @@ class Launcher:
             tasks.append(task)
 
         # ожидание запуска всех серверов (исключение выбрасывается осознанно - не запустился сервис - сломан весь пайплайн)
-        await asyncio.gather(*tasks, return_exceptions=False)
-        logger.info(f"[ {LOG_NAME} ] Сервисы успешно загружены")
+        try:
+            await asyncio.gather(*tasks, return_exceptions=False)
+            logger.info(f"[ {LOG_NAME} ] Сервисы успешно загружены")
+        except Exception as err:
+            logger.error(f"[ {LOG_NAME} ] остановка {err}")
+            # self.queue.put_nowait({
+            #     'timestamp': None, 'msg': f'Не удалось запуститься, ошибка: {err}',
+            #     'type': 'error',
+            # })
+            # await self.stop() # @@@
 
     async def stop(self, timeout_stop_server: float = 180.0):
         if not self._running:
