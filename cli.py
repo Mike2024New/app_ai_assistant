@@ -23,7 +23,7 @@ app = get_cli_app(
     exe_mode=getattr(sys, 'frozen', False),
     name=settings.app_name,
     root_dir=get_root_dir_path(),
-    cli_settings=CliSettings(enable_build_command=True, enable_git_push=True),
+    cli_settings=CliSettings(enable_build_command=True, enable_git_push=True, enable_run_test=True),
     build_settings=build_settings,
 )
 
