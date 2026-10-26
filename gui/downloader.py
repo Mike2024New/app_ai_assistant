@@ -14,6 +14,7 @@ async def download_file(addon: dict, event: asyncio.Event, feedback_dict: dict |
         label=addon['label'],
         url=addon['url'],
         relative_path_file=addon['relative_path_file'],
+        sha256=addon['sha256'],
     )
     feedback_dict[addon['label']] = {'progress': 0.0, 'total': 0, 'downolad': 0}
     try:
@@ -25,11 +26,14 @@ async def download_file(addon: dict, event: asyncio.Event, feedback_dict: dict |
                 DownloadTask(
                     label=add['label'],
                     url=add['url'],
-                    relative_path_file=add['relative_path_file']
+                    relative_path_file=add['relative_path_file'],
+                    sha256=add['sha256'],
                 )
             )
 
         tasks.append(task)
+
+        logger.info(f'[ {window_name} ] Начата загрузка {addon["label"]}')
 
         await downolad_many_files(
             event=event,
@@ -44,8 +48,9 @@ async def download_file(addon: dict, event: asyncio.Event, feedback_dict: dict |
         )
         # загрузка завершена, убрать её
         feedback_dict.pop(addon['label'])
+        logger.info(f'[ {window_name} ] загрузка завершена {addon["label"]}')
         for add in addon['added']:
             feedback_dict.pop(add['label'])
     except Exception as err:
         if not event.is_set():
-            logger.error(f'[ {window_name} ] Ошибка при загрузке addon["label"]: {err}')
+            logger.error(f'[ {window_name} ] Ошибка при загрузке {addon["label"]} : {err}')

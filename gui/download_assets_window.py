@@ -1,6 +1,7 @@
 import asyncio
 import json
 import threading
+import hashlib
 from time import sleep
 import customtkinter as ctk
 from config import SettingsEditor
@@ -8,6 +9,7 @@ from infrastructure_path_utils import get_root_dir_path
 from config import logger
 from CTkToolTip import CTkToolTip
 from gui.downloader import download_file
+from pathlib import Path
 
 window_name = 'addition_window'
 
@@ -25,6 +27,7 @@ class AdditionallyWindow:
         self._feedback_dict = feedback_dict or {}
         self._events_dict = {}
         self._progress_labels = {}
+        self._progress_btns = {}
 
     def start(self):
         print(f'Продолжение загрузок если есть')
@@ -59,6 +62,15 @@ class AdditionallyWindow:
         with open(file=get_root_dir_path() / 'additionally.json', mode='w', encoding='utf-8') as f:
             f.write(json.dumps(additionally, ensure_ascii=False, indent=2))
 
+    @staticmethod
+    def calculate_sha256(file_path: Path) -> str:
+        sha256_hash = hashlib.sha256()
+        # Читаем файл кусками по 64 КБ
+        with open(file_path, "rb") as f:
+            for byte_block in iter(lambda: f.read(65536), b""):
+                sha256_hash.update(byte_block)  # noqa
+        return sha256_hash.hexdigest()
+
     def window(self, root: ctk.CTk, frame: ctk.CTkFrame, row_state: ctk.CTkLabel, storage: dict):
         self._root = root
         self._frame = frame
@@ -73,6 +85,11 @@ class AdditionallyWindow:
         threading.Thread(target=lambda: self.observer(), daemon=True).start()
 
         for i, addon in enumerate(self._additionaly):
+            # file_path = get_root_dir_path().parent / addon['relative_path_file']
+            # sha256_file = self.calculate_sha256(file_path=file_path)
+            # if sha256_file == addon['sha256']:
+            #     continue
+
             frame_in = ctk.CTkFrame(scrolable_frame, fg_color='transparent')
             frame_in.pack(expand=False, fill='x', padx=10, pady=2, anchor='ne')
 
@@ -95,6 +112,7 @@ class AdditionallyWindow:
             progress_label.configure(font=('roboto', 14, 'bold'))
             progress_label.pack(expand=False, side='right', padx=10, pady=10)
             self._progress_labels[addon['label']] = progress_label
+            self._progress_btns[addon['label']] = dwnload_btn
 
             if addon['label'] in self._feedback_dict:
                 dwnload_btn.configure(text='прервать')
@@ -150,4 +168,5 @@ class AdditionallyWindow:
                 if percent < 100:
                     self._progress_labels[lbl].configure(text=f"Загрузка: {percent} %", text_color='gold4')
                 else:
+                    self._progress_btns[lbl].configure(text='завершено', fg_color='#10B981', hover_color="#059669")
                     self._progress_labels[lbl].configure(text=f"Загрузка: {percent} %", text_color='green')

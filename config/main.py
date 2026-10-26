@@ -5,7 +5,7 @@ from config.schemas import Settings
 from infrastructure_other.time_utils import TimeUtils
 from config.default_settings import default_settings
 from infrastructure_log_utils import Logger
-from config.first_run import create_scripts_folder
+from config.ini import first_run_ini
 
 __all__ = [
     'settings', 'settings_manager',
@@ -14,7 +14,7 @@ __all__ = [
     'default_settings',
 ]
 
-create_scripts_folder()
+first_run_ini()
 request_id = str(uuid.uuid4())[:8]
 
 logger = Logger(
