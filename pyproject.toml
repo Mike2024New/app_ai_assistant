@@ -1,10 +1,9 @@
 [project]
 name = "app_ai_assistant"
-version = "0.51.0"
+version = "0.52.0"
 description = "Hi! I'm an AI assistant. I can talk to you."
 readme = "README.md"
 requires-python = "==3.12.*"
-# все зависимости жестко зафиксированны, чтобы приложение не упало в случае измения где либо api, "плата за проезд" необходимость ручного обновления.
 dependencies = [
     "customtkinter==6.0.0",
     "websockets==17.1",
@@ -13,11 +12,11 @@ dependencies = [
     "nvidia-ml-py==13.615.71",
     "loguru==0.7.3",
     "ctktooltip==0.9",
-    "infrastructure-other @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_other",
-    "infrastructure-process-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_process_utils",
-    "infrastructure-http-clients @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_http_clients",
-    "infrastructure-path-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_path_utils",
-    "infrastructure-builder @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_builder",
-    "infrastructure-cli-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_cli_utils",
-    "infrastructure-log-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_log_utils",
+    "infrastructure-other @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_other",
+    "infrastructure-process-utils @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_process_utils",
+    "infrastructure-http-clients @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_http_clients",
+    "infrastructure-path-utils @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_path_utils",
+    "infrastructure-builder @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_builder",
+    "infrastructure-cli-utils @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_cli_utils",
+    "infrastructure-log-utils @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_log_utils",
 ]
