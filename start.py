@@ -7,7 +7,7 @@ import asyncio, sys, subprocess
 Все шаги (простая установка после клонирования с git):     python start.py all
 По отдельности:
   sync        - установить зависимости
-  dwn         - скачать материалы
+  dwn         - скачать материалы (если есть)
   build       - собрать .exe/bin
 """
 args = sys.argv

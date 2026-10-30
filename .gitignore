@@ -11,6 +11,8 @@ additionally.json
 # тесты
 .pytest_cache/
 
+README_NEW.md
+
 # Виртуальное окружение
 .venv/
 venv/
