@@ -42,7 +42,6 @@ class Pipeline:
         if self._llm is not None:
             self._llm.interrupt()
         if self._llm_task is not None and not self._llm_task.done():
-            # проверить это место, ибо во время резюме зависает !!!
             self._llm_task.cancel()
             await asyncio.gather(self._llm_task, return_exceptions=True)  # придавить задачу
         if self._tts is not None:
