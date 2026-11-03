@@ -122,8 +122,8 @@
 ## Связанные репозитории
 
 - [srv_llm](https://github.com/Mike2024New/srv_llm) - мозг приложения.
-- [srv_tts_silero](https://github.com/Mike2024New/srv_tts_silero) - голос приложения.
-- [srv_stt_vosk](https://github.com/Mike2024New/srv_stt_vosk) - уши приложения.
+- [srv_tts](https://github.com/Mike2024New/srv_tts) - голос приложения.
+- [srv_stt](https://github.com/Mike2024New/srv_stt) - уши приложения.
 - [infrastructure2](https://github.com/Mike2024New/infrastructure2) — набор утилит (сервер, логи, сборка)
 
 ---
