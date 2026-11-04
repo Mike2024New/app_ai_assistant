@@ -117,6 +117,17 @@
   с [официального сайта Microsoft](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170).
 - **Для моделей whisper** - (medium, large) нужна видеокарта Nvidia с драйвером cuda.
 
+Минимальные требования:
+- Windows 10/11 (64-bit).
+- 16 ГБ RAM (для Gemma 3 4B + Whisper small + Silero).
+- CPU уровня Intel i5 8-го поколения / Ryzen 5.
+- ~10 ГБ свободного места.
+- Опционально: NVIDIA GPU (GTX 1650 / RTX 3050 и выше) + CUDA для Whisper medium/large и ускорения LLM.
+
+Тестировалось на:
+- i5 8-го поколения + GTX 1650 + 16 ГБ RAM.
+- i7-11700 + RTX 3050 (8 ГБ) + 64 ГБ RAM.
+
 ---
 
 ## Связанные репозитории
