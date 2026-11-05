@@ -5,6 +5,8 @@
 
 ![preview](docs/preview.PNG)
 > [Смотреть видео-демонстрацию на Яндекс.Диске](https://disk.yandex.ru/i/gM94t2C9pjZXfA)
+> ❕ Без Яндекс аккаунта видео может быть не доступно, дублирую его
+> в [релизе](https://github.com/Mike2024New/app_ai_assistant/releases/tag/1.0.0), под названием app_ai_assistant_demo.mp4
 >
 > [Статья на Habr](https://habr.com/ru/articles/1101954/)
 ---
